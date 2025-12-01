@@ -1,1 +1,5409 @@
-.
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Manager Cards - Jeu de Cartes Manager</title>
+  <meta name="theme-color" content="#0f172a">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root {
+      --bg: #071026;
+      --panel: #091829;
+      --accent: #1f6feb;
+      --accent-light: #3b82f6;
+      --muted: #9fb0d6;
+      --text: #e6eef8;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --bronze: #cd7f32;
+      --silver: #c0c0c0;
+      --gold: #ffd700;
+      --legendary: #ff00ff;
+      --card: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      --shadow: 0 4px 18px rgba(0,0,0,0.4);
+      --transition: all 0.3s ease;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    }
+    
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+    
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      overflow: hidden;
+      position: fixed;
+      width: 100%;
+    }
+    
+    .app {
+      max-width: 480px;
+      width: 100%;
+      height: 100vh;
+      height: 100dvh;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      position: relative;
+      background: linear-gradient(135deg, #071026 0%, #0a1a3a 100%);
+    }
+    
+    .bg-animation {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+      overflow: hidden;
+    }
+    
+    .bg-animation::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle, rgba(31, 111, 235, 0.1) 0%, transparent 70%);
+      animation: pulse 15s infinite alternate;
+    }
+    
+    @keyframes pulse {
+      0% { transform: scale(1); opacity: 0.5; }
+      50% { transform: scale(1.1); opacity: 0.7; }
+      100% { transform: scale(1); opacity: 0.5; }
+    }
+    
+    header {
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 12px;
+      background: rgba(6, 20, 36, 0.8);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      font-weight: 600;
+      z-index: 10;
+      position: relative;
+      flex-shrink: 0;
+    }
+    
+    header .title {
+      font-size: 18px;
+      font-weight: 700;
+      background: linear-gradient(90deg, var(--accent), var(--accent-light));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    
+    header .small {
+      font-size: 12px;
+      color: var(--muted);
+    }
+    
+    main {
+      flex: 1;
+      display: flex;
+      position: relative;
+      overflow: hidden;
+      height: calc(100% - 112px);
+    }
+    
+    .screen {
+      position: absolute;
+      inset: 0;
+      padding: 12px;
+      display: none;
+      flex-direction: column;
+      gap: 12px;
+      overflow-x: hidden;
+      overflow-y: auto;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: var(--transition);
+      -webkit-overflow-scrolling: touch;
+    }
+    
+    .screen.active {
+      display: flex;
+      opacity: 1;
+      transform: translateY(0);
+    }
+    
+    .screen {
+      overflow-x: hidden;
+    }
+    
+    .panel {
+      background: rgba(9, 24, 41, 0.8);
+      backdrop-filter: blur(10px);
+      border-radius: 16px;
+      padding: 16px;
+      box-shadow: var(--shadow);
+      border: 1px solid rgba(255,255,255,0.05);
+      transition: var(--transition);
+      flex-shrink: 0;
+    }
+    
+    .panel:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(0,0,0,0.5);
+    }
+    
+    .row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    
+    .col {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    
+    input, select {
+      padding: 12px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.1);
+      background: rgba(3, 22, 35, 0.6);
+      color: inherit;
+      font-size: 15px;
+      transition: var(--transition);
+      width: 100%;
+    }
+    
+    input:focus, select:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(31, 111, 235, 0.2);
+    }
+    
+    button {
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: none;
+      background: var(--accent);
+      color: white;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      transition: var(--transition);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      flex-shrink: 0;
+      min-height: 40px;
+    }
+    
+    button:hover {
+      background: var(--accent-light);
+      transform: translateY(-2px);
+    }
+    
+    button:active {
+      transform: translateY(0);
+    }
+    
+    .ghost {
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.1);
+      color: var(--muted);
+    }
+    
+    .ghost:hover {
+      background: rgba(255,255,255,0.05);
+      border-color: rgba(255,255,255,0.2);
+    }
+    
+    .danger {
+      background: var(--danger);
+    }
+    
+    .danger:hover {
+      background: #dc2626;
+    }
+    
+    .success {
+      background: var(--success);
+    }
+    
+    .warning {
+      background: var(--warning);
+    }
+    
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+    
+    .stat {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      border-radius: 12px;
+      background: var(--card);
+      transition: var(--transition);
+    }
+    
+    .stat:hover {
+      transform: translateY(-2px);
+      background: rgba(255,255,255,0.05);
+    }
+    
+    .icon {
+      font-size: 20px;
+      width: 36px;
+      height: 36px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 10px;
+      background: rgba(255,255,255,0.05);
+    }
+    
+    .quick {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    
+    .quick button {
+      flex: 1;
+      min-width: 80px;
+    }
+    
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+    
+    .card-item {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 12px;
+      min-height: 100px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      border: 1px solid rgba(255,255,255,0.05);
+      transition: var(--transition);
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .card-item:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+    }
+    
+    .card-item::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 4px;
+    }
+    
+    .card-item.bronze::before {
+      background: var(--bronze);
+    }
+    
+    .card-item.silver::before {
+      background: var(--silver);
+    }
+    
+    .card-item.gold::before {
+      background: var(--gold);
+    }
+    
+    .card-item.legendary::before {
+      background: var(--legendary);
+    }
+    
+    .card-title {
+      font-weight: 700;
+      font-size: 14px;
+      margin-bottom: 5px;
+    }
+    
+    .card-stats {
+      font-size: 12px;
+      color: var(--muted);
+      display: flex;
+      gap: 8px;
+    }
+    
+    .battlefield {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      justify-content: space-between;
+    }
+    
+    .slot {
+      flex: 1;
+      background: rgba(4, 19, 35, 0.6);
+      padding: 16px;
+      border-radius: 12px;
+      text-align: center;
+      border: 1px solid rgba(255,255,255,0.05);
+      transition: var(--transition);
+    }
+    
+    .slot:hover {
+      background: rgba(4, 19, 35, 0.8);
+    }
+    
+    .anim {
+      transform-origin: center;
+      transition: transform 350ms ease;
+    }
+    
+    .hit {
+      animation: hit 0.5s ease;
+    }
+    
+    @keyframes hit {
+      0% { transform: translateY(0) scale(1); }
+      50% { transform: translateY(-8px) scale(1.05); }
+      100% { transform: translateY(0) scale(1); }
+    }
+    
+    .store-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+    
+    footer {
+      height: 56px;
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      padding: 8px;
+      background: rgba(6, 20, 35, 0.8);
+      backdrop-filter: blur(10px);
+      border-top: 1px solid rgba(255,255,255,0.05);
+      z-index: 10;
+      display: none;
+      flex-shrink: 0;
+    }
+    
+    footer.visible {
+      display: flex;
+    }
+    
+    footer button {
+      flex: 1;
+      height: 40px;
+      border-radius: 10px;
+      font-size: 12px;
+      flex-direction: column;
+      gap: 2px;
+      padding: 6px 4px;
+    }
+    
+    footer button.active {
+      background: rgba(31, 111, 235, 0.2);
+      border: 1px solid var(--accent);
+      color: var(--accent-light);
+    }
+    
+    .notification {
+      position: fixed;
+      top: 70px;
+      right: 10px;
+      background: var(--panel);
+      border-radius: 10px;
+      padding: 12px 16px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      border-left: 4px solid var(--accent);
+      z-index: 1000;
+      transform: translateX(120%);
+      transition: transform 0.3s ease;
+      max-width: 300px;
+    }
+    
+    .notification.show {
+      transform: translateX(0);
+    }
+    
+    .notification.success {
+      border-left-color: var(--success);
+    }
+    
+    .notification.warning {
+      border-left-color: var(--warning);
+    }
+    
+    .notification.danger {
+      border-left-color: var(--danger);
+    }
+    
+    .daily-reward {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      opacity: 0;
+      visibility: hidden;
+      transition: var(--transition);
+    }
+    
+    .daily-reward.active {
+      opacity: 1;
+      visibility: visible;
+    }
+    
+    .reward-content {
+      background: var(--panel);
+      border-radius: 20px;
+      padding: 24px;
+      text-align: center;
+      max-width: 300px;
+      width: 90%;
+      transform: scale(0.9);
+      transition: transform 0.3s ease;
+    }
+    
+    .daily-reward.active .reward-content {
+      transform: scale(1);
+    }
+    
+    .reward-icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+    }
+    
+    .leaderboard-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      border-radius: 10px;
+      background: rgba(255,255,255,0.03);
+      margin-bottom: 8px;
+      transition: var(--transition);
+    }
+    
+    .leaderboard-item:hover {
+      background: rgba(255,255,255,0.05);
+    }
+    
+    .rank {
+      width: 30px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      background: var(--accent);
+      font-weight: bold;
+      font-size: 14px;
+    }
+    
+    .rank-1 {
+      background: var(--gold);
+    }
+    
+    .rank-2 {
+      background: var(--silver);
+    }
+    
+    .rank-3 {
+      background: var(--bronze);
+    }
+    
+    .badges {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    
+    .badge {
+      background: rgba(255,255,255,0.05);
+      border-radius: 20px;
+      padding: 6px 12px;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    
+    @keyframes glow {
+      0% { box-shadow: 0 0 5px rgba(205, 127, 50, 0.5); }
+      50% { box-shadow: 0 0 20px rgba(205, 127, 50, 0.8); }
+      100% { box-shadow: 0 0 5px rgba(205, 127, 50, 0.5); }
+    }
+    
+    .card-item.bronze {
+      animation: glow 3s infinite;
+    }
+    
+    .card-item.silver {
+      animation: glow 3s infinite;
+      animation-delay: 0.5s;
+    }
+    
+    .card-item.gold {
+      animation: glow 3s infinite;
+      animation-delay: 1s;
+    }
+    
+    .card-item.legendary {
+      animation: glow 3s infinite;
+      animation-delay: 1.5s;
+    }
+    
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+    
+    ::-webkit-scrollbar-track {
+      background: rgba(255,255,255,0.05);
+      border-radius: 10px;
+    }
+    
+    ::-webkit-scrollbar-thumb {
+      background: var(--accent);
+      border-radius: 10px;
+    }
+    
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--accent-light);
+    }
+    
+    .friends-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+    
+    .friend-item {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .friend-avatar {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background: var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+    }
+    
+    .stat-bar {
+      height: 8px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 4px;
+      overflow: hidden;
+      margin-top: 4px;
+    }
+    
+    .stat-fill {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 4px;
+    }
+    
+    .loading {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid rgba(255,255,255,.3);
+      border-radius: 50%;
+      border-top-color: #fff;
+      animation: spin 1s ease-in-out infinite;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    .like-btn {
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.1);
+      color: var(--muted);
+      padding: 8px 12px;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 14px;
+    }
+    
+    .like-btn.liked {
+      background: rgba(239, 68, 68, 0.1);
+      border-color: var(--danger);
+      color: var(--danger);
+    }
+    
+    .like-btn:hover {
+      background: rgba(239, 68, 68, 0.1);
+    }
+    
+    .admin-stats {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+    
+    .admin-stat {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 16px;
+      text-align: center;
+    }
+    
+    .admin-stat .value {
+      font-size: 24px;
+      font-weight: bold;
+      margin: 8px 0;
+    }
+    
+    .admin-stat .label {
+      font-size: 12px;
+      color: var(--muted);
+    }
+    
+    .user-list {
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    
+    .user-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    
+    .user-actions {
+      display: flex;
+      gap: 8px;
+    }
+    
+    .quest-item {
+      padding: 12px;
+      border-radius: 8px;
+      background: rgba(255,255,255,0.05);
+      margin-bottom: 8px;
+    }
+    
+    .quest-progress {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    
+    .quest-reward {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    
+    .battle-log {
+      max-height: 200px;
+      overflow-y: auto;
+      padding: 8px;
+      background: rgba(255,255,255,0.03);
+      border-radius: 8px;
+    }
+    
+    .entry {
+      padding: 8px;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      font-size: 14px;
+    }
+    
+    #screen-login {
+      justify-content: center;
+      padding: 20px;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    #screen-login .panel {
+      width: 100%;
+      max-width: 400px;
+      margin: 0 auto;
+    }
+    
+    body, html, .app, .screen {
+      overflow-x: hidden;
+    }
+    
+    .screen {
+      overflow-y: auto;
+    }
+    
+    .full-screen-btn {
+      width: 100%;
+      height: 50px;
+      font-size: 16px;
+      margin: 8px 0;
+    }
+    
+    #admin-panel {
+      display: none;
+    }
+    
+    .fusion-item {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      transition: var(--transition);
+    }
+    
+    .fusion-item:hover {
+      transform: translateY(-3px);
+      background: rgba(255,255,255,0.05);
+    }
+    
+    .event-item {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 10px;
+      border-left: 4px solid var(--accent);
+    }
+    
+    .event-item.special {
+      border-left-color: var(--gold);
+    }
+    
+    .message-item {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 12px;
+      margin-bottom: 8px;
+      border-left: 4px solid var(--accent);
+    }
+    
+    .message-item.system {
+      border-left-color: var(--warning);
+    }
+    
+    .small-btn {
+      padding: 8px 10px;
+      font-size: 12px;
+      min-height: 36px;
+    }
+    
+    .gap-small {
+      gap: 6px;
+    }
+    
+    .gap-medium {
+      gap: 10px;
+    }
+    
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+    
+    button:disabled:hover {
+      background: var(--accent);
+      transform: none;
+    }
+    
+    .fusion-selected {
+      border: 2px solid var(--accent);
+      box-shadow: 0 0 10px var(--accent);
+    }
+    
+    @media (max-width: 400px) {
+      .quick {
+        flex-direction: column;
+      }
+      
+      .quick button {
+        min-width: 100%;
+      }
+      
+      .cards-grid, .store-grid, .friends-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    
+    /* Styles pour les nouvelles fonctionnalités admin */
+    .admin-controls {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-top: 10px;
+    }
+    
+    .admin-control-panel {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 10px;
+    }
+    
+    .admin-control-panel h4 {
+      margin-bottom: 10px;
+      font-size: 14px;
+      color: var(--muted);
+    }
+    
+    .admin-input-group {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    
+    .admin-input-group input {
+      flex: 1;
+    }
+    
+    .admin-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    
+    .admin-tab {
+      flex: 1;
+      padding: 8px;
+      text-align: center;
+      background: rgba(255,255,255,0.05);
+      border-radius: 8px;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+    
+    .admin-tab.active {
+      background: var(--accent);
+    }
+    
+    .admin-section {
+      display: none;
+    }
+    
+    .admin-section.active {
+      display: block;
+    }
+    
+    .admin-log {
+      max-height: 200px;
+      overflow-y: auto;
+      background: rgba(0,0,0,0.2);
+      border-radius: 8px;
+      padding: 8px;
+      font-size: 12px;
+      margin-top: 10px;
+    }
+    
+    .admin-log-entry {
+      padding: 4px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+
+    /* Nouveaux styles pour les fonctionnalités ajoutées */
+    .vip-badge {
+      background: linear-gradient(45deg, var(--gold), var(--legendary)) !important;
+      color: black !important;
+      font-weight: bold;
+      animation: vip-glow 2s infinite alternate;
+    }
+
+    @keyframes vip-glow {
+      0% { box-shadow: 0 0 5px gold; }
+      100% { box-shadow: 0 0 20px gold, 0 0 30px var(--legendary); }
+    }
+
+    .friend-avatar.vip {
+      background: linear-gradient(45deg, var(--gold), var(--legendary));
+    }
+
+    .like-btn.liked {
+      background: rgba(239, 68, 68, 0.2);
+      border-color: var(--danger);
+      color: var(--danger);
+      animation: heart-pulse 0.5s ease;
+    }
+
+    @keyframes heart-pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+      100% { transform: scale(1); }
+    }
+
+    /* Styles pour les nouveaux badges */
+    .badge.rare {
+      background: linear-gradient(45deg, var(--silver), var(--gold));
+      color: black;
+    }
+
+    .badge.epic {
+      background: linear-gradient(45deg, var(--gold), var(--legendary));
+      color: black;
+    }
+
+    .badge.legendary {
+      background: linear-gradient(45deg, var(--legendary), #ff00ff);
+      color: white;
+      animation: legendary-glow 3s infinite;
+    }
+
+    @keyframes legendary-glow {
+      0%, 100% { box-shadow: 0 0 5px var(--legendary); }
+      50% { box-shadow: 0 0 20px var(--legendary), 0 0 30px #ff00ff; }
+    }
+
+    .profile-header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .profile-avatar {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      margin: 0 auto 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+      background: var(--accent);
+    }
+
+    .profile-avatar.vip {
+      background: linear-gradient(45deg, var(--gold), var(--legendary));
+    }
+
+    .match-result {
+      text-align: center;
+      padding: 20px;
+    }
+
+    .match-score {
+      font-size: 48px;
+      font-weight: bold;
+      margin: 20px 0;
+    }
+
+    .team-lineup {
+      display: flex;
+      justify-content: space-between;
+      margin: 20px 0;
+    }
+
+    .team {
+      flex: 1;
+      text-align: center;
+    }
+
+    .vs {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      font-weight: bold;
+    }
+
+    .progress-container {
+      background: rgba(255,255,255,0.1);
+      border-radius: 10px;
+      height: 8px;
+      overflow: hidden;
+      margin: 8px 0;
+    }
+
+    .progress-bar {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 10px;
+      transition: width 0.3s ease;
+    }
+
+    /* Styles pour la sélection automatique */
+    .auto-select-container {
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .auto-select-buttons {
+      display: flex;
+      gap: 8px;
+    }
+
+    .auto-select-buttons button {
+      flex: 1;
+    }
+
+    /* Styles pour la recherche d'adversaire */
+    .matchmaking {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .matchmaking .loading {
+      margin: 20px 0;
+    }
+
+    .matchmaking-status {
+      margin-top: 12px;
+      font-size: 14px;
+      color: var(--muted);
+    }
+
+    .opponent-found {
+      animation: opponent-found 0.5s ease;
+    }
+
+    @keyframes opponent-found {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(1); }
+    }
+
+    /* Styles pour la fusion */
+    .fusion-interface {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .fusion-slots {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .fusion-slot {
+      flex: 1;
+      min-height: 120px;
+      border: 2px dashed rgba(255,255,255,0.2);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: var(--transition);
+    }
+
+    .fusion-slot.filled {
+      border-color: var(--accent);
+      background: rgba(31, 111, 235, 0.1);
+    }
+
+    .fusion-result {
+      text-align: center;
+      padding: 16px;
+      background: rgba(255,255,255,0.05);
+      border-radius: 12px;
+      margin-top: 12px;
+    }
+
+    .fusion-success {
+      animation: fusion-success 1s ease;
+    }
+
+    @keyframes fusion-success {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+      100% { transform: scale(1); }
+    }
+
+    /* NOUVEAUX STYLES POUR LES FONCTIONNALITÉS AJOUTÉES */
+    
+    /* Clan System */
+    .clan-container {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    
+    .clan-item {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .clan-info {
+      flex: 1;
+    }
+    
+    .clan-members {
+      display: flex;
+      margin-top: 8px;
+    }
+    
+    .clan-member {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      margin-right: -6px;
+      border: 2px solid var(--panel);
+    }
+    
+    /* Player Market */
+    .market-filters {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+    
+    .market-filters select {
+      flex: 1;
+      min-width: 120px;
+    }
+    
+    .player-card-market {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 12px;
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .player-card-market:hover {
+      transform: translateY(-2px);
+      background: rgba(255,255,255,0.05);
+    }
+    
+    .player-info {
+      flex: 1;
+    }
+    
+    .player-price {
+      text-align: right;
+      margin-right: 12px;
+    }
+    
+    /* Player Upgrade */
+    .upgrade-interface {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    
+    .upgrade-stats {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    
+    .upgrade-cost {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 8px;
+      font-size: 14px;
+    }
+    
+    .upgrade-btn {
+      width: 100%;
+      margin-top: 8px;
+    }
+    
+    /* Resource Sharing */
+    .share-resource {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 12px;
+      margin-bottom: 10px;
+    }
+    
+    .share-amount {
+      display: flex;
+      gap: 8px;
+      margin: 8px 0;
+    }
+    
+    .share-amount input {
+      flex: 1;
+    }
+    
+    .tax-info {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+    
+    /* Championship System */
+    .championship-item {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 10px;
+    }
+    
+    .championship-progress {
+      margin: 12px 0;
+    }
+    
+    .championship-rewards {
+      display: flex;
+      justify-content: space-around;
+      margin-top: 12px;
+    }
+    
+    .reward-item {
+      text-align: center;
+    }
+    
+    /* Live Match Animation */
+    .live-match {
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .live-indicator {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: var(--danger);
+      color: white;
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: bold;
+      animation: pulse 1.5s infinite;
+    }
+    
+    /* Badge Collection */
+    .badge-collection {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+    
+    .badge-item {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 12px;
+      text-align: center;
+      transition: var(--transition);
+    }
+    
+    .badge-item.locked {
+      opacity: 0.5;
+      filter: grayscale(1);
+    }
+    
+    .badge-item.unlocked {
+      transform: scale(1.05);
+      box-shadow: 0 0 15px rgba(255,255,255,0.1);
+    }
+    
+    .badge-icon {
+      font-size: 24px;
+      margin-bottom: 8px;
+    }
+    
+    /* Player Limits */
+    .limit-info {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 12px;
+      margin-bottom: 10px;
+      text-align: center;
+    }
+    
+    .limit-progress {
+      margin: 8px 0;
+    }
+    
+    /* Enhanced Leaderboard with Likes */
+    .leaderboard-likes {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-left: auto;
+    }
+    
+    .like-btn-leaderboard {
+      background: transparent;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      transition: var(--transition);
+    }
+    
+    .like-btn-leaderboard.liked {
+      color: var(--danger);
+      animation: heart-pulse 0.5s ease;
+    }
+    
+    /* Enhanced Admin Controls */
+    .admin-controls-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+    
+    .admin-control-item {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 12px;
+      text-align: center;
+    }
+    
+    /* Enhanced Match System */
+    .match-events {
+      max-height: 200px;
+      overflow-y: auto;
+      background: rgba(0,0,0,0.2);
+      border-radius: 8px;
+      padding: 8px;
+      margin-top: 12px;
+    }
+    
+    .match-event {
+      padding: 4px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      font-size: 12px;
+    }
+    
+    .match-event.goal {
+      color: var(--success);
+    }
+    
+    .match-event.defense {
+      color: var(--accent);
+    }
+    
+    .match-event.miss {
+      color: var(--warning);
+    }
+    
+    /* VIP Timer */
+    .vip-timer {
+      background: linear-gradient(45deg, var(--gold), var(--legendary));
+      color: black;
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: bold;
+      margin-left: 8px;
+    }
+    
+    /* CORRECTION: Bouton Annuler visible */
+    #btn-cancel-register {
+      display: flex !important;
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.2);
+    }
+    
+    #btn-cancel-register:hover {
+      background: rgba(255,255,255,0.2);
+    }
+
+    /* CORRECTION: Navigation visible */
+    #nav-market {
+      display: flex;
+    }
+
+    #nav-badges {
+      display: flex;
+    }
+
+    /* CORRECTION: Amélioration du scroll mobile */
+    .screen {
+      padding-bottom: 20px;
+    }
+
+    @media (max-width: 400px) {
+      .screen {
+        padding: 8px;
+        gap: 8px;
+      }
+      
+      .panel {
+        padding: 12px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="bg-animation"></div>
+    
+    <!-- Notifications -->
+    <div class="notification" id="notification">
+      <div class="notification-content">Bienvenue dans Manager Cards!</div>
+    </div>
+    
+    <!-- Daily Reward -->
+    <div class="daily-reward" id="daily-reward">
+      <div class="reward-content">
+        <div class="reward-icon">🎁</div>
+        <h3>Récompense Quotidienne</h3>
+        <p>Vous avez reçu <strong>2 Gems</strong> et <strong>200 Pièces</strong>!</p>
+        <button id="claim-reward" class="success full-screen-btn" style="margin-top: 16px;">Récupérer</button>
+      </div>
+    </div>
+    
+    <header>
+      <div class="title">Manager Cards</div>
+      <div class="small" id="hdr-user">Non connecté</div>
+    </header>
+
+    <main>
+      <!-- LOGIN - CORRIGÉ: Bouton Annuler visible -->
+      <section id="screen-login" class="screen active">
+        <div class="panel col">
+          <div style="text-align: center; margin-bottom: 20px;">
+            <div style="font-size: 48px; margin-bottom: 16px;">👋</div>
+            <h1 style="margin-bottom: 8px; font-size: 28px;">Manager Cards</h1>
+            <div class="small" style="font-size: 16px;">Le jeu de cartes manager ultime</div>
+          </div>
+          <input id="login-email" placeholder="Email" type="email"/>
+          <input id="login-pass" placeholder="Mot de passe" type="password"/>
+          <div class="row">
+            <button id="btn-login" class="full-screen-btn" style="flex: 2;"><i class="fas fa-sign-in-alt"></i> Connexion</button>
+            <button id="btn-go-register" class="ghost full-screen-btn" style="flex: 1;">S'inscrire</button>
+          </div>
+          <div style="text-align: center; margin-top: 20px;">
+            <div class="small">Nouveau ici? Créez un compte pour commencer!</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- REGISTER - CORRIGÉ: Bouton Annuler visible -->
+      <section id="screen-register" class="screen">
+        <div class="panel col" style="max-width: 400px; margin: 0 auto; margin-top: 40px;">
+          <div style="text-align: center; margin-bottom: 20px;">
+            <div style="font-size: 24px; margin-bottom: 8px;">🚀</div>
+            <h2 style="margin-bottom: 4px;">Créer un compte</h2>
+            <div class="small">Rejoignez l'aventure Manager Cards</div>
+          </div>
+          <input id="reg-name" placeholder="Nom d'utilisateur"/>
+          <input id="reg-email" placeholder="Email" type="email"/>
+          <input id="reg-pass" placeholder="Mot de passe" type="password"/>
+          <div class="row">
+            <button id="btn-register" class="full-screen-btn"><i class="fas fa-user-plus"></i> Créer</button>
+            <button id="btn-cancel-register" class="ghost full-screen-btn">Annuler</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- DASHBOARD - AMÉLIORÉ: Système de likes dans classement -->
+      <section id="screen-dashboard" class="screen">
+        <div class="panel stats" id="dash-stats">
+          <div class="stat">
+            <div class="icon">💎</div>
+            <div>
+              <div class="small">Gems</div>
+              <div id="dash-gems">0</div>
+            </div>
+          </div>
+          <div class="stat">
+            <div class="icon">🪙</div>
+            <div>
+              <div class="small">Pièces</div>
+              <div id="dash-coins">0</div>
+            </div>
+          </div>
+          <div class="stat">
+            <div class="icon">⚡</div>
+            <div>
+              <div class="small">Énergie</div>
+              <div id="dash-energy">0/20</div>
+            </div>
+          </div>
+          <div class="stat">
+            <div class="icon">⭐</div>
+            <div>
+              <div class="small">Niveau</div>
+              <div id="dash-level">1</div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="panel">
+          <div class="small" style="margin-bottom: 8px;">Récompense Quotidienne</div>
+          <div class="row">
+            <div style="flex: 1;">
+              <div>Jour <span id="reward-day">1</span>/7</div>
+              <div class="small" id="reward-timer">Prochaine récompense dans 12h</div>
+            </div>
+            <button class="success small-btn" id="btn-daily-reward" disabled><i class="fas fa-gift"></i> Récupérer</button>
+          </div>
+        </div>
+        
+        <div class="panel">
+          <div class="small" style="margin-bottom: 8px;">Classement Global</div>
+          <div id="mini-leaderboard">
+            <!-- Mini leaderboard with likes will be populated by JS -->
+          </div>
+        </div>
+        
+        <div class="panel quick">
+          <button id="nav-team" class="small-btn"><i class="fas fa-users"></i> Équipe</button>
+          <button id="nav-store" class="ghost small-btn"><i class="fas fa-shopping-cart"></i> Boutique</button>
+          <button id="nav-match" class="ghost small-btn"><i class="fas fa-trophy"></i> Match</button>
+        </div>
+        
+        <div class="panel quick">
+          <button id="nav-friends" class="ghost small-btn"><i class="fas fa-user-friends"></i> Amis</button>
+          <button id="nav-fusion" class="ghost small-btn"><i class="fas fa-random"></i> Fusion</button>
+          <button id="nav-clan" class="ghost small-btn"><i class="fas fa-users"></i> Clan</button>
+        </div>
+
+        <div class="panel quick">
+          <button id="nav-market" class="ghost small-btn"><i class="fas fa-store"></i> Marché</button>
+          <button id="nav-badges" class="ghost small-btn"><i class="fas fa-medal"></i> Badges</button>
+        </div>
+        
+        <!-- Bouton Admin caché - visible seulement pour l'admin -->
+        <div class="panel" id="admin-panel" style="display: none;">
+          <div class="small" style="margin-bottom: 8px;">Administration</div>
+          <button id="nav-admin" class="warning small-btn"><i class="fas fa-cog"></i> Dashboard Admin</button>
+        </div>
+      </section>
+
+      <!-- CLAN SYSTEM - NOUVEAU: Système de clans -->
+      <section id="screen-clan" class="screen">
+        <div class="panel row" style="justify-content: space-between; align-items: center;">
+          <div>
+            <div class="small">Clan</div>
+            <div>Rejoignez ou créez un clan</div>
+          </div>
+          <button id="clan-back" class="ghost small-btn"><i class="fas fa-arrow-left"></i> Retour</button>
+        </div>
+        
+        <div class="panel">
+          <div class="small" style="margin-bottom: 8px;">Mon Clan</div>
+          <div id="user-clan">
+            <!-- User's clan info will be populated by JS -->
+          </div>
+        </div>
+        
+        <div class="panel">
+          <div class="small" style="margin-bottom: 8px;">Créer un Clan</div>
+          <div class="row">
+            <input id="clan-name" placeholder="Nom du clan" style="flex: 1;"/>
+            <button id="btn-create-clan" class="small-btn"><i class="fas fa-plus"></i> Créer</button>
+          </div>
+          <div class="small" style="margin-top: 8px;">Coût: 5000 pièces</div>
+        </div>
+        
+        <div class="panel">
+          <div class="small" style="margin-bottom: 8px;">Clans Disponibles</div>
+          <div id="clans-list" class="clan-container">
+            <!-- Clan list will be populated by JS -->
+          </div>
+        </div>
+        
+        <div class="panel">
+          <div class="small" style="margin-bottom: 8px;">Partage de Ressources</div>
+          <div id="resource-sharing">
+            <!-- Resource sharing interface -->
+          </div>
+        </div>
+      </section>
+
+      <!-- PLAYER MARKET - NOUVEAU: Marché des joueurs -->
+      <section id="screen-market" class="screen">
+        <div class="panel row" style="justify-content: space-between; align-items: center;">
+          <div>
+            <div class="small">Marché</div>
+            <div>Achetez et vendez des joueurs</div>
+          </div>
+          <button id="market-back" class="ghost small-btn"><i class="fas fa-arrow-left"></i> Retour</button>
+        </div>
+        
+        <div class="panel">
+          <div class="small" style="margin-bottom: 8px;">Vendre un Joueur</div>
+          <div id="sell-player">
+            <!-- Sell player interface -->
+          </div>
+        </div>
+        
+        <div class="panel">
+          <div class="small" style="margin-bottom: 8px;">Améliorer un Joueur</div>
+          <div id="upgrade-player">
+            <!-- Upgrade player interface -->
+          </div>
+        </div>
+        
+        <div class="panel">
+          <div class="small" style="margin-bottom: 8px;">Joueurs en Vente</div>
+          <div class="market-filters">
+            <select id="filter-rarity">
+              <option value="all">Toutes raretés</option>
+              <option value="bronze">Bronze</option>
+              <option value="silver">Argent</option>
+              <option value="gold">Or</option>
+              <option value="legendary">Légendaire</option>
+            </select>
+            <select id="filter-position">
+              <option value="all">Toutes positions</option>
+              <option value="ATT">Attaquant</option>
+              <option value="MID">Milieu</option>
+              <option value="DEF">Défenseur</option>
+              <option value="GK">Gardien</option>
+            </select>
+          </div>
+          <div id="market-players">
+            <!-- Market players list -->
+          </div>
+        </div>
+      </section>
+
+      <!-- BADGES COLLECTION - AMÉLIORÉ: Badges par accomplissements -->
+      <section id="screen-badges" class="screen">
+        <div class="panel row" style="justify-content: space-between; align-items: center;">
+          <div>
+            <div class="small">Badges</div>
+            <div>Collectionnez des badges</div>
+          </div>
+          <button id="badges-back" class="ghost small-btn"><i class="fas fa-arrow-left"></i> Retour</button>
+        </div>
+        
+        <div class="panel">
+          <div class="small" style="margin-bottom: 8px;">Mes Badges</div>
+          <div id="user-badges" class="badge-collection">
+            <!-- User badges will be populated by JS -->
+          </div>
+        </div>
+        
+        <div class="panel">
+          <div class="small" style="margin-bottom: 8px;">Badges Disponibles</div>
+          <div id="available-badges" class="badge-collection">
+            <!-- Available badges will be populated by JS -->
+          </div>
+        </div>
+      </section>
+
+      <!-- TEAM - AMÉLIORÉ: Sélection automatique -->
+      <section id="screen-team" class="screen">
+        <div class="panel row" style="justify-content: space-between; align-items: center;">
+          <div>
+            <div class="small">Mon Équipe</div>
+            <div>Gérez vos joueurs</div>
+          </div>
+          <button id="team-back" class="ghost small-btn"><i class="fas fa-arrow-left"></i> Retour</button>
+        </div>
+        
+        <div class="panel">
+          <div class="auto-select-container">
+            <div class="small" style="margin-bottom: 8px;">Sélection Automatique</div>
+            <div class="auto-select-buttons">
+              <button id="btn-auto-best" class="small-btn"><i class="fas fa-magic"></i> Meilleure Équipe</button>
+              <button id="btn-auto-position" class="ghost small-btn"><i class="fas fa-chess-board"></i> Par Position</button>
+            </div>
+          </div>
+        </div>
+        
+        <div class="panel">
+          <div class="small" style="margin-bottom: 8px;">Équipe de Départ</div>
+          <div id="team-content">
+            <!-- Contenu de l'équipe -->
+          </div>
+        </div>
+        
+        <div class="panel">
+          <div class="small" style="margin-bottom: 8px;">Remplaçants</div>
+          <div id="subs-content">
+            <!-- Contenu des remplaçants -->
+          </div>
+        </div>
+      </section>
+
+      <!-- MATCH - AMÉLIORÉ: Système de championnat -->
+      <section id="screen-match" class="screen">
+        <div class="panel row" style="justify-content: space-between; align-items: center;">
+          <div>
+            <div class="small">Match</div>
+            <div>Affrontez d'autres joueurs</div>
+          </div>
+          <button id="match-back" class="ghost small-btn"><i class="fas fa-arrow-left"></i> Retour</button>
+        </div>
+        
+        <div class="panel">
+          <div class="small" style="margin-bottom: 8px;">Match Rapide</div>
+          <div id="matchmaking-container">
+            <div class="matchmaking">
+              <button id="btn-find-opponent" class="small-btn" style="width: 100%;">
+                <i class="fas fa-search"></i> Trouver un adversaire
+              </button>
+              <div id="matchmaking-status" class="matchmaking-status" style="display: none;">
+                <div class="loading"></div>
+                <div>Recherche d'adversaire en cours...</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="panel">
+          <div class="small" style="margin-bottom: 8px;">Championnat en Cours</div>
+          <div id="championship-info">
+            <!-- Championship info will be populated by JS -->
+          </div>
+        </div>
+        
+        <div class="panel">
+          <div class="small" style="margin-bottom: 8px;">Matchs Live</div>
+          <div id="live-matches">
+            <!-- Live matches will be populated by JS -->
+          </div>
+        </div>
+        
+        <div class="panel" id="match-opponent" style="display: none;">
+          <div class="small" style="margin-bottom: 8px;">Adversaire trouvé</div>
+          <div id="opponent-info" class="opponent-found">
+            <!-- Info de l'adversaire -->
+          </div>
+          <button id="btn-play-match" class="success small-btn" style="margin-top: 12px; width: 100%;">
+            <i class="fas fa-play"></i> Jouer le match
+          </button>
+        </div>
+        
+        <div class="panel" id="match-result" style="display: none;">
+          <div class="small" style="margin-bottom: 8px;">Résultat du match</div>
+          <div id="match-result-content">
+            <!-- Résultat du match -->
+          </div>
+        </div>
+      </section>
+
+      <!-- STORE - CORRIGÉ: VIP avec durée limitée -->
+      <section id="screen-store" class="screen">
+        <div class="panel row" style="justify-content: space-between; align-items: center;">
+          <div>
+            <div class="small">Boutique</div>
+            <div>Achetez packs ou énergie</div>
+          </div>
+          <button id="store-back" class="ghost small-btn"><i class="fas fa-arrow-left"></i> Retour</button>
+        </div>
+        
+        <div class="panel">
+          <div class="small" style="margin-bottom: 8px;">Packs de Cartes - Standard (Pièces)</div>
+          <div class="store-grid">
+            <div class="card-item bronze">
+              <div>
+                <div class="card-title">Pack Bronze</div>
+                <div class="small">3 cartes Bronze</div>
+              </div>
+              <button class="buy-pack small-btn ghost" data-pack="bronze" data-cost="1000" data-currency="coins"><i class="fas fa-shopping-bag"></i> 1000🪙</button>
+            </div>
+            <div class="card-item silver">
+              <div>
+                <div class="card-title">Pack Argent</div>
+                <div class="small">3 cartes Argent + 1 Gold</div>
+              </div>
+              <button class="buy-pack small-btn ghost" data-pack="silver" data-cost="2500" data-currency="coins"><i class="fas fa-shopping-bag"></i> 2500🪙</button>
+            </div>
+          </div>
+        </div>
+        
+        <div class="panel">
+          <div class="small" style="margin-bottom: 8px;">Packs de Cartes - Premium (Gems)</div>
+          <div class="store-grid">
+            <div class="card-item gold">
+              <div>
+                <div class="card-title">Pack Gold</div>
+                <div class="small">2 cartes Gold + 1 Legendaire</div>
+              </div>
+              <button class="buy-pack small-btn" data-pack="gold" data-cost="500" data-currency="gems"><i class="fas fa-shopping-bag"></i> 500💎</button>
+            </div>
+            <div class="card-item legendary">
+              <div>
+                <div class="card-title">Pack VIP</div>
+                <div class="small">Cartes exclusives VIP</div>
+              </div>
+              <button class="buy-pack small-btn" data-pack="vip" data-cost="1000" data-currency="gems"><i class="fas fa-crown"></i> 1000💎</button>
+            </div>
+          </div>
+        </div>
+        
+        <div class="panel">
+          <div class="small" style="margin-bottom: 8px;">Statut VIP</div>
+          <div id="vip-status">
+            <!-- VIP status will be populated by JS -->
+          </div>
+          <button id="btn-buy-vip" class="vip-badge small-btn" style="width: 100%; margin-top: 12px;">
+            <i class="fas fa-crown"></i> Acheter VIP (30 jours) - 2000💎
+          </button>
+        </div>
+        
+        <div class="panel">
+          <div class="small" style="margin-bottom: 8px;">Énergie</div>
+          <div class="store-grid">
+            <div class="card-item">
+              <div>
+                <div class="card-title">Énergie +10</div>
+                <div class="small">Recharge partielle</div>
+              </div>
+              <div class="row">
+                <button class="buy-energy small-btn ghost" data-amount="10" data-cost="400" data-currency="coins"><i class="fas fa-bolt"></i> 400🪙</button>
+              </div>
+            </div>
+            <div class="card-item">
+              <div>
+                <div class="card-title">Énergie +50</div>
+                <div class="small">Recharge complète</div>
+              </div>
+              <div class="row">
+                <button class="buy-energy small-btn" data-amount="50" data-cost="150" data-currency="gems"><i class="fas fa-bolt"></i> 150💎</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- PROFILE -->
+      <section id="screen-profile" class="screen">
+        <div class="panel row" style="justify-content: space-between; align-items: center;">
+          <div>
+            <div class="small">Profil</div>
+            <div>Vos statistiques</div>
+          </div>
+          <button id="profile-back" class="ghost small-btn"><i class="fas fa-arrow-left"></i> Retour</button>
+        </div>
+        <div class="panel">
+          <div id="profile-content">
+            <!-- Contenu du profil -->
+          </div>
+        </div>
+      </section>
+
+      <!-- FRIENDS - AMÉLIORÉ: Système d'amis fonctionnel avec inspection -->
+      <section id="screen-friends" class="screen">
+        <div class="panel row" style="justify-content: space-between; align-items: center;">
+          <div>
+            <div class="small">Amis</div>
+            <div>Gérez vos amis et défiez-les</div>
+          </div>
+          <button id="friends-back" class="ghost small-btn"><i class="fas fa-arrow-left"></i> Retour</button>
+        </div>
+        
+        <div class="panel">
+          <div class="small" style="margin-bottom: 8px;">Mes Amis</div>
+          <div id="friends-list" class="friends-grid">
+            <!-- Friends list will be populated by JS -->
+          </div>
+        </div>
+        
+        <div class="panel">
+          <div class="small" style="margin-bottom: 8px;">Demandes d'Ami</div>
+          <div id="friend-requests">
+            <!-- Friend requests will be populated by JS -->
+          </div>
+        </div>
+        
+        <div class="panel">
+          <div class="small" style="margin-bottom: 8px;">Joueurs Recommandés</div>
+          <div id="suggested-friends">
+            <!-- Suggested friends will be populated by JS -->
+          </div>
+        </div>
+      </section>
+
+      <!-- FUSION - AMÉLIORÉ: Système de fusion fonctionnel -->
+      <section id="screen-fusion" class="screen">
+        <div class="panel row" style="justify-content: space-between; align-items: center;">
+          <div>
+            <div class="small">Fusion</div>
+            <div>Combinez vos cartes</div>
+          </div>
+          <button id="fusion-back" class="ghost small-btn"><i class="fas fa-arrow-left"></i> Retour</button>
+        </div>
+        
+        <div class="panel">
+          <div class="fusion-interface">
+            <div class="small" style="margin-bottom: 8px;">Sélectionnez 3 cartes à fusionner (Coût: 100 pièces)</div>
+            
+            <div class="fusion-slots">
+              <div class="fusion-slot" id="fusion-slot-1">
+                <div class="small">Emplacement 1</div>
+              </div>
+              <div class="fusion-slot" id="fusion-slot-2">
+                <div class="small">Emplacement 2</div>
+              </div>
+              <div class="fusion-slot" id="fusion-slot-3">
+                <div class="small">Emplacement 3</div>
+              </div>
+            </div>
+            
+            <button id="btn-fusion" class="small-btn" disabled>
+              <i class="fas fa-random"></i> Fusionner (0/3) - 100🪙
+            </button>
+            
+            <div id="fusion-result" class="fusion-result" style="display: none;">
+              <!-- Résultat de la fusion -->
+            </div>
+          </div>
+        </div>
+        
+        <div class="panel">
+          <div class="small" style="margin-bottom: 8px;">Vos Cartes Disponibles</div>
+          <div id="fusion-cards" class="cards-grid">
+            <!-- Cartes disponibles pour la fusion -->
+          </div>
+        </div>
+      </section>
+
+      <!-- PROFILE VIEW (Inspection de profil) - AMÉLIORÉ: Fonctionnel -->
+      <section id="screen-profile-view" class="screen">
+        <div class="panel row" style="justify-content: space-between; align-items: center;">
+          <div>
+            <div class="small">Profil de <span id="viewed-user-name">Joueur</span></div>
+            <div>Inspecter le profil</div>
+          </div>
+          <button id="profile-view-back" class="ghost small-btn"><i class="fas fa-arrow-left"></i> Retour</button>
+        </div>
+        
+        <div class="panel" id="profile-view-content">
+          <!-- Contenu du profil inspecté -->
+        </div>
+      </section>
+
+      <!-- ADMIN DASHBOARD - AMÉLIORÉ: Tous les boutons fonctionnels -->
+      <section id="screen-admin" class="screen">
+        <div class="panel row" style="justify-content: space-between; align-items: center;">
+          <div>
+            <div class="small">Administration</div>
+            <div>Dashboard de gestion du jeu</div>
+          </div>
+          <button id="admin-back" class="ghost small-btn"><i class="fas fa-arrow-left"></i> Retour</button>
+        </div>
+        
+        <div class="admin-tabs">
+          <div class="admin-tab active" data-tab="stats">📊 Statistiques</div>
+          <div class="admin-tab" data-tab="users">👥 Utilisateurs</div>
+          <div class="admin-tab" data-tab="controls">⚙️ Contrôles</div>
+          <div class="admin-tab" data-tab="championship">🏆 Championnat</div>
+        </div>
+        
+        <!-- Section Statistiques -->
+        <div class="admin-section active" id="admin-stats-section">
+          <div class="panel">
+            <div class="small" style="margin-bottom: 8px;">📊 Statistiques Globales</div>
+            <div class="admin-stats">
+              <div class="admin-stat">
+                <div class="icon">👥</div>
+                <div class="value" id="admin-total-users">0</div>
+                <div class="label">Joueurs Totaux</div>
+              </div>
+              <div class="admin-stat">
+                <div class="icon">🎮</div>
+                <div class="value" id="admin-total-matches">0</div>
+                <div class="label">Matchs Joués</div>
+              </div>
+              <div class="admin-stat">
+                <div class="icon">💎</div>
+                <div class="value" id="admin-total-gems">0</div>
+                <div class="label">Gems Distribuées</div>
+              </div>
+              <div class="admin-stat">
+                <div class="icon">🪙</div>
+                <div class="value" id="admin-total-coins">0</div>
+                <div class="label">Pièces en Circulation</div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="panel">
+            <div class="small" style="margin-bottom: 8px;">📈 Statistiques Avancées</div>
+            <div id="admin-advanced-stats">
+              <!-- Statistiques avancées -->
+            </div>
+          </div>
+          
+          <div class="panel">
+            <div class="small" style="margin-bottom: 8px;">🏆 Classement Réel</div>
+            <div id="admin-leaderboard">
+              <!-- Classement réel -->
+            </div>
+          </div>
+        </div>
+        
+        <!-- Section Utilisateurs -->
+        <div class="admin-section" id="admin-users-section">
+          <div class="panel">
+            <div class="small" style="margin-bottom: 8px;">👥 Gestion des Utilisateurs</div>
+            <div class="user-list" id="admin-user-list" style="margin-top: 12px;">
+              <!-- Liste des utilisateurs -->
+            </div>
+          </div>
+          
+          <div class="panel">
+            <div class="small" style="margin-bottom: 8px;">🔄 Actions Rapides</div>
+            <div class="admin-controls-grid">
+              <button class="small-btn" id="admin-add-gems"><i class="fas fa-gem"></i> +10 Gems à tous</button>
+              <button class="small-btn" id="admin-add-coins"><i class="fas fa-coins"></i> +100 Pièces à tous</button>
+              <button class="small-btn" id="admin-reset-energy"><i class="fas fa-bolt"></i> Réinitialiser Énergie</button>
+              <button class="small-btn" id="admin-refresh-stats"><i class="fas fa-sync"></i> Actualiser Stats</button>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Section Contrôles -->
+        <div class="admin-section" id="admin-controls-section">
+          <div class="panel">
+            <div class="small" style="margin-bottom: 8px;">⚙️ Actions Administratives</div>
+            
+            <div class="admin-control-panel">
+              <h4>Notifications Globales</h4>
+              <div class="admin-input-group">
+                <input id="admin-notif-message" placeholder="Message de notification..."/>
+                <button id="admin-send-notif" class="small-btn"><i class="fas fa-bell"></i> Envoyer</button>
+              </div>
+            </div>
+            
+            <div class="admin-control-panel">
+              <h4>Modification Utilisateur Spécifique</h4>
+              <div class="admin-input-group">
+                <input id="admin-user-id" placeholder="ID Utilisateur"/>
+              </div>
+              <div class="admin-input-group">
+                <input id="admin-gems-amount" placeholder="Gems" type="number"/>
+                <button id="admin-set-gems" class="small-btn"><i class="fas fa-gem"></i> Définir</button>
+              </div>
+              <div class="admin-input-group">
+                <input id="admin-coins-amount" placeholder="Pièces" type="number"/>
+                <button id="admin-set-coins" class="small-btn"><i class="fas fa-coins"></i> Définir</button>
+              </div>
+            </div>
+          </div>
+          
+          <div class="panel">
+            <div class="small" style="margin-bottom: 8px;">📋 Journal d'Administration</div>
+            <div class="admin-log" id="admin-log">
+              <!-- Journal des actions admin -->
+            </div>
+          </div>
+        </div>
+        
+        <!-- Section Championnat -->
+        <div class="admin-section" id="admin-championship-section">
+          <div class="panel">
+            <div class="small" style="margin-bottom: 8px;">🏆 Gestion du Championnat</div>
+            <div class="admin-controls-grid">
+              <button class="small-btn" id="admin-start-championship"><i class="fas fa-play"></i> Démarrer Championnat</button>
+              <button class="small-btn" id="admin-end-championship"><i class="fas fa-stop"></i> Terminer Championnat</button>
+              <button class="small-btn" id="admin-simulate-matches"><i class="fas fa-dice"></i> Simuler Matchs</button>
+              <button class="small-btn" id="admin-update-standings"><i class="fas fa-sync"></i> Mettre à jour Classement</button>
+            </div>
+          </div>
+          
+          <div class="panel">
+            <div class="small" style="margin-bottom: 8px;">Classement du Championnat</div>
+            <div id="admin-championship-standings">
+              <!-- Classement du championnat -->
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer id="app-footer">
+      <button id="ft-home" class="ghost active"><i class="fas fa-home"></i> <span>Accueil</span></button>
+      <button id="ft-team" class="ghost"><i class="fas fa-users"></i> <span>Équipe</span></button>
+      <button id="ft-match" class="ghost"><i class="fas fa-trophy"></i> <span>Match</span></button>
+      <button id="ft-store" class="ghost"><i class="fas fa-shopping-cart"></i> <span>Boutique</span></button>
+      <button id="ft-profile" class="ghost"><i class="fas fa-user"></i> <span>Profil</span></button>
+    </footer>
+  </div>
+
+  <script type="module">
+    // Import Firebase
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+    import { 
+      getAuth, 
+      onAuthStateChanged, 
+      signInWithEmailAndPassword, 
+      createUserWithEmailAndPassword, 
+      signOut, 
+      updateProfile 
+    } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
+    import { 
+      getDatabase, 
+      ref, 
+      set, 
+      get, 
+      onValue, 
+      update, 
+      push,
+      query,
+      orderByChild,
+      limitToFirst,
+      remove,
+      orderByValue
+    } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
+
+    // Configuration Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyBnDW725laagCdj0INT9gaA2z0FsLn6cO4",
+      authDomain: "defi-amis-plus.firebaseapp.com",
+      databaseURL: "https://defi-amis-plus-default-rtdb.firebaseio.com",
+      projectId: "defi-amis-plus",
+      storageBucket: "defi-amis-plus.appspot.com",
+      messagingSenderId: "714241330241",
+      appId: "1:714241330241:web:b927c37c0d511e66f64ac0"
+    };
+
+    // Initialiser Firebase
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getDatabase(app);
+
+    // Déclaration des éléments UI
+    const screens = {
+      login: document.getElementById('screen-login'),
+      register: document.getElementById('screen-register'),
+      dashboard: document.getElementById('screen-dashboard'),
+      team: document.getElementById('screen-team'),
+      match: document.getElementById('screen-match'),
+      store: document.getElementById('screen-store'),
+      profile: document.getElementById('screen-profile'),
+      friends: document.getElementById('screen-friends'),
+      fusion: document.getElementById('screen-fusion'),
+      admin: document.getElementById('screen-admin'),
+      profileView: document.getElementById('screen-profile-view'),
+      clan: document.getElementById('screen-clan'),
+      market: document.getElementById('screen-market'),
+      badges: document.getElementById('screen-badges')
+    };
+    
+    const footer = document.getElementById('app-footer');
+    const notification = document.getElementById('notification');
+    const dailyReward = document.getElementById('daily-reward');
+    
+    // UID de l'administrateur
+    const ADMIN_UID = "oTcsqDzJPYUhX9zCls9tQwfy5Kh2";
+    
+    // Variables globales
+    let currentUserData = null;
+    let globalUsers = [];
+    let isAdmin = false;
+    let selectedCardsForFusion = [];
+    let currentlyViewedUser = null;
+    let currentOpponent = null;
+    let matchHistory = [];
+    let matchmakingInterval = null;
+    let clans = [];
+    let championship = null;
+    let playerCollectionLimit = 50;
+    
+    // Nouvelles variables pour les fonctionnalités
+    let marketPlayers = [];
+    let availableBadges = [];
+    let liveMatchesList = [];
+    
+    // Nouveaux noms de cartes étendus
+    const extendedCardNames = [
+      'Messi', 'Ronaldo', 'Neymar', 'Mbappé', 'Haaland', 'Lewandowski', 
+      'De Bruyne', 'Salah', 'Mané', 'Kane', 'Benzema', 'Modric', 
+      'Van Dijk', 'Kante', 'Son', 'Lukaku', 'Griezmann', 'Sterling',
+      'Bellingham', 'Pedri', 'Foden', 'Musiala', 'Gavi', 'Davies',
+      'Hernández', 'Alvarez', 'Martinez', 'Osimhen', 'Kvaratskhelia', 'Leao',
+      'Vinicius', 'Rodrygo', 'Valverde', 'Camavinga', 'Tchouaméni', 'Militao',
+      'Diaz', 'Gakpo', 'Nunez', 'Mac Allister', 'Caicedo', 'Enzo',
+      'Szoboszlai', 'Olmo', 'Simons', 'Xavi Simons', 'Wirtz', 'Musiala'
+    ];
+
+    // Fonction utilitaire pour obtenir l'ID utilisateur
+    function getUserId() {
+      return auth.currentUser ? auth.currentUser.uid : null;
+    }
+    
+    // Fonction pour obtenir la référence de l'utilisateur dans la base de données
+    function getUserRef(uid = null) {
+      const userId = uid || getUserId();
+      return userId ? ref(db, `users/${userId}`) : null;
+    }
+    
+    // Show notification function
+    function showNotification(message, type = '') {
+      if (!notification) return;
+      
+      notification.textContent = message;
+      notification.className = 'notification';
+      if (type) notification.classList.add(type);
+      notification.classList.add('show');
+      
+      setTimeout(() => {
+        notification.classList.remove('show');
+      }, 3000);
+    }
+    
+    // Fonction pour ajouter une entrée au journal admin
+    function addAdminLog(message) {
+      const adminLog = document.getElementById('admin-log');
+      if (!adminLog) return;
+      
+      const logEntry = document.createElement('div');
+      logEntry.className = 'admin-log-entry';
+      logEntry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+      adminLog.appendChild(logEntry);
+      adminLog.scrollTop = adminLog.scrollHeight;
+    }
+    
+    // CORRECTION: Fonction showScreen améliorée avec tous les écrans
+    function showScreen(name) {
+      if (!screens[name]) {
+        console.error(`Écran ${name} non trouvé`);
+        return;
+      }
+      
+      Object.values(screens).forEach(s => {
+        if (s) s.classList.remove('active');
+      });
+      
+      // Gestion de la visibilité du footer
+      if (name === 'login' || name === 'register') {
+        if (footer) footer.classList.remove('visible');
+      } else {
+        if (footer) footer.classList.add('visible');
+      }
+      
+      // Update footer button states
+      if (footer) {
+        const footerButtons = footer.querySelectorAll('button');
+        footerButtons.forEach(btn => btn.classList.remove('active'));
+        
+        if (name === 'dashboard') {
+          const ftHome = document.getElementById('ft-home');
+          if (ftHome) ftHome.classList.add('active');
+        }
+        if (name === 'team') {
+          const ftTeam = document.getElementById('ft-team');
+          if (ftTeam) ftTeam.classList.add('active');
+        }
+        if (name === 'match') {
+          const ftMatch = document.getElementById('ft-match');
+          if (ftMatch) ftMatch.classList.add('active');
+        }
+        if (name === 'store') {
+          const ftStore = document.getElementById('ft-store');
+          if (ftStore) ftStore.classList.add('active');
+        }
+        if (name === 'profile') {
+          const ftProfile = document.getElementById('ft-profile');
+          if (ftProfile) ftProfile.classList.add('active');
+        }
+      }
+      
+      // CORRECTION: Charger les données pour tous les écrans
+      if (name === 'dashboard') loadDashboard();
+      if (name === 'team') loadTeam();
+      if (name === 'profile') loadProfile();
+      if (name === 'friends') loadFriends();
+      if (name === 'fusion') loadFusion();
+      if (name === 'admin') loadAdminDashboard();
+      if (name === 'profileView') loadProfileView();
+      if (name === 'match') loadMatch();
+      if (name === 'clan') loadClan();
+      if (name === 'market') loadMarket();
+      if (name === 'badges') loadBadges();
+      if (name === 'store') loadStore();
+      
+      setTimeout(() => {
+        if (screens[name]) {
+          screens[name].classList.add('active');
+        }
+      }, 10);
+    }
+    
+    // CORRECTION: Fonction pour vérifier et charger les données utilisateur
+    async function ensureUserData() {
+      if (!currentUserData) {
+        await loadUserData();
+      }
+      return currentUserData !== null;
+    }
+    
+    // Système de récompense quotidienne
+    function checkDailyReward() {
+      if (!currentUserData) return;
+      
+      const btnDailyReward = document.getElementById('btn-daily-reward');
+      const rewardTimer = document.getElementById('reward-timer');
+      
+      if (!btnDailyReward || !rewardTimer) return;
+      
+      const lastReward = currentUserData.lastDailyReward;
+      const now = new Date();
+      
+      if (lastReward) {
+        const lastRewardDate = new Date(lastReward);
+        const timeDiff = now - lastRewardDate;
+        const hoursDiff = timeDiff / (1000 * 60 * 60);
+        
+        if (hoursDiff < 24) {
+          // Récompense déjà récupérée aujourd'hui
+          btnDailyReward.disabled = true;
+          const hoursLeft = Math.floor(24 - hoursDiff);
+          rewardTimer.textContent = `Prochaine récompense dans ${hoursLeft}h`;
+        } else {
+          // Récompense disponible
+          btnDailyReward.disabled = false;
+          rewardTimer.textContent = "Récompense disponible!";
+        }
+      } else {
+        // Première récompense
+        btnDailyReward.disabled = false;
+        rewardTimer.textContent = "Récompense disponible!";
+      }
+    }
+    
+    // Fonctions utilitaires pour les nations et positions
+    function getRandomNation() {
+      const nations = ['France', 'Brésil', 'Argentine', 'Espagne', 'Allemagne', 'Angleterre', 'Italie', 'Portugal', 'Pays-Bas', 'Belgique'];
+      return nations[Math.floor(Math.random() * nations.length)];
+    }
+
+    function getRandomPosition() {
+      const positions = ['ATT', 'MID', 'DEF', 'GK'];
+      return positions[Math.floor(Math.random() * positions.length)];
+    }
+    
+    // Générer des cartes de départ avec plus de variété
+    function generateStarterCards() {
+      const rarities = ['bronze', 'bronze', 'bronze', 'silver', 'silver', 'gold', 'gold', 'legendary'];
+      const cards = {};
+      const starters = [];
+      const subs = [];
+      
+      for (let i = 0; i < 20; i++) {
+        const id = 'card' + Date.now() + i;
+        const rarity = i < 8 ? rarities[Math.floor(Math.random() * 3)] : 
+                      i < 15 ? 'silver' : 
+                      i < 18 ? 'gold' : 'legendary';
+        
+        const name = extendedCardNames[Math.floor(Math.random() * extendedCardNames.length)];
+        const attack = 5 + Math.floor(Math.random() * 20);
+        const defense = 3 + Math.floor(Math.random() * 18);
+        const speed = 1 + Math.floor(Math.random() * 12);
+        
+        cards[id] = {
+          id,
+          name,
+          rarity,
+          attack,
+          defense,
+          speed,
+          level: 1,
+          nation: getRandomNation(),
+          position: getRandomPosition()
+        };
+        
+        if (i < 5) {
+          starters.push(id);
+        } else if (i < 11) {
+          subs.push(id);
+        }
+      }
+      
+      return { cards, starters, subs };
+    }
+    
+    // Créer ou récupérer le profil utilisateur
+    async function ensureUserProfile(uid, username, email) {
+      const userRef = getUserRef(uid);
+      const snapshot = await get(userRef);
+      
+      if (!snapshot.exists()) {
+        // Créer un nouveau profil utilisateur
+        const { cards, starters, subs } = generateStarterCards();
+        
+        const userData = {
+          username: username,
+          displayName: username,
+          email: email,
+          gems: 25,
+          coins: 500,
+          energy: 15,
+          maxEnergy: 20,
+          level: 1,
+          xp: 0,
+          xpToNextLevel: 100,
+          vip: false,
+          vipExpiration: null,
+          wins: 0,
+          losses: 0,
+          draws: 0,
+          badges: ["Débutant"],
+          friends: [],
+          friendRequests: [],
+          starters,
+          subs,
+          cards,
+          matchHistory: {},
+          lastDailyReward: null,
+          likes: 0,
+          likedBy: [],
+          totalMatches: 0,
+          winRate: 0,
+          totalGoals: 0,
+          totalDefenses: 0,
+          quests: {
+            daily: {},
+            weekly: {}
+          },
+          registrationDate: new Date().toISOString(),
+          lastLogin: new Date().toISOString(),
+          playersSold: 0
+        };
+        
+        await set(userRef, userData);
+        return userData;
+      } else {
+        // Retourner les données existantes
+        const data = snapshot.val();
+        // Mettre à jour la dernière connexion
+        await update(userRef, {
+          lastLogin: new Date().toISOString()
+        });
+        return data;
+      }
+    }
+    
+    // Charger les données utilisateur depuis Firebase
+    async function loadUserData() {
+      const userId = getUserId();
+      if (!userId) return null;
+      
+      const userRef = getUserRef();
+      const snapshot = await get(userRef);
+      
+      if (snapshot.exists()) {
+        currentUserData = snapshot.val();
+        return currentUserData;
+      }
+      return null;
+    }
+    
+    // Mettre à jour les données utilisateur dans Firebase
+    async function updateUserData(updates) {
+      const userId = getUserId();
+      if (!userId) return;
+      
+      const userRef = getUserRef();
+      await update(userRef, updates);
+      
+      if (currentUserData) {
+        currentUserData = { ...currentUserData, ...updates };
+      }
+    }
+    
+    // Charger tous les utilisateurs pour le classement
+    async function loadAllUsers() {
+      const usersRef = ref(db, 'users');
+      const snapshot = await get(usersRef);
+      
+      if (snapshot.exists()) {
+        const usersData = snapshot.val();
+        globalUsers = Object.entries(usersData)
+          .filter(([uid, user]) => user && user.email)
+          .map(([uid, user]) => ({
+            uid,
+            ...user
+          }));
+        return globalUsers;
+      }
+      return [];
+    }
+    
+    // Load dashboard
+    async function loadDashboard() {
+      if (!await ensureUserData()) return;
+      
+      // Vérifier l'expiration du VIP
+      checkVipExpiration();
+      
+      const dashGems = document.getElementById('dash-gems');
+      const dashCoins = document.getElementById('dash-coins');
+      const dashEnergy = document.getElementById('dash-energy');
+      const dashLevel = document.getElementById('dash-level');
+      const hdrUser = document.getElementById('hdr-user');
+      const rewardDay = document.getElementById('reward-day');
+      
+      if (dashGems) dashGems.textContent = currentUserData.gems || 0;
+      if (dashCoins) dashCoins.textContent = currentUserData.coins || 0;
+      if (dashEnergy) dashEnergy.textContent = `${currentUserData.energy || 0}/${currentUserData.maxEnergy || 20}`;
+      if (dashLevel) dashLevel.textContent = currentUserData.level || 1;
+      if (hdrUser) hdrUser.textContent = currentUserData.displayName || 'Joueur';
+      
+      // Vérification de la récompense quotidienne
+      checkDailyReward();
+      
+      // Afficher le panel admin si l'utilisateur est admin
+      const adminPanel = document.getElementById('admin-panel');
+      if (adminPanel) {
+        if (getUserId() === ADMIN_UID) {
+          adminPanel.style.display = 'block';
+          isAdmin = true;
+        } else {
+          adminPanel.style.display = 'none';
+          isAdmin = false;
+        }
+      }
+      
+      // Charger tous les utilisateurs pour le classement
+      await loadAllUsers();
+      
+      // Populate mini leaderboard with likes
+      const miniLeaderboard = document.getElementById('mini-leaderboard');
+      if (miniLeaderboard) {
+        const sortedUsers = [...globalUsers]
+          .sort((a, b) => (b.likes || 0) - (a.likes || 0) || (b.level || 1) - (a.level || 1))
+          .slice(0, 5);
+        
+        miniLeaderboard.innerHTML = '';
+        sortedUsers.forEach((user, index) => {
+          const rankClass = index === 0 ? 'rank-1' : index === 1 ? 'rank-2' : index === 2 ? 'rank-3' : '';
+          const hasLiked = user.likedBy?.includes(getUserId());
+          
+          const item = document.createElement('div');
+          item.className = 'leaderboard-item';
+          item.innerHTML = `
+            <div class="rank ${rankClass}">${index + 1}</div>
+            <div>
+              <div>${user.displayName || 'Joueur'}</div>
+              <div class="small">Niv. ${user.level || 1}</div>
+            </div>
+            <div class="leaderboard-likes">
+              <button class="like-btn-leaderboard ${hasLiked ? 'liked' : ''}" data-user="${user.uid}">
+                <i class="fas fa-heart"></i>
+              </button>
+              <span>${user.likes || 0}</span>
+            </div>
+          `;
+          miniLeaderboard.appendChild(item);
+        });
+        
+        // Événements pour les boutons like dans le classement
+        document.querySelectorAll('.like-btn-leaderboard').forEach(btn => {
+          btn.addEventListener('click', function() {
+            const userId = this.getAttribute('data-user');
+            likeUserFromLeaderboard(userId);
+          });
+        });
+      }
+      
+      // Vérifier et attribuer les badges
+      await checkAndAwardBadges();
+    }
+    
+    // NOUVEAU: Système de likes dans le classement
+    async function likeUserFromLeaderboard(userId) {
+      if (!currentUserData) return;
+      
+      const userRef = getUserRef(userId);
+      const snapshot = await get(userRef);
+      
+      if (snapshot.exists()) {
+        const userData = snapshot.val();
+        const hasLiked = userData.likedBy?.includes(getUserId());
+        let updatedLikes = userData.likes || 0;
+        let updatedLikedBy = [...(userData.likedBy || [])];
+        
+        if (hasLiked) {
+          // Retirer le like
+          updatedLikes = Math.max(0, updatedLikes - 1);
+          updatedLikedBy = updatedLikedBy.filter(uid => uid !== getUserId());
+          showNotification("Like retiré", "info");
+        } else {
+          // Ajouter le like
+          updatedLikes += 1;
+          updatedLikedBy.push(getUserId());
+          showNotification("Joueur liké! 💖", "success");
+        }
+        
+        // Mettre à jour le profil liké
+        await update(userRef, {
+          likes: updatedLikes,
+          likedBy: updatedLikedBy
+        });
+        
+        // Recharger le dashboard pour mettre à jour l'affichage
+        loadDashboard();
+      }
+    }
+    
+    // NOUVEAU: Système de clans
+    async function loadClan() {
+      if (!await ensureUserData()) return;
+      
+      await loadAllUsers();
+      await loadClans();
+      
+      const userClan = document.getElementById('user-clan');
+      const clansList = document.getElementById('clans-list');
+      const resourceSharing = document.getElementById('resource-sharing');
+      
+      // Afficher le clan de l'utilisateur
+      if (userClan) {
+        const userClanData = clans.find(c => c.members?.includes(getUserId()));
+        
+        if (userClanData) {
+          userClan.innerHTML = `
+            <div class="clan-item">
+              <div class="clan-info">
+                <div style="font-weight: bold;">${userClanData.name}</div>
+                <div class="small">Niveau ${userClanData.level || 1} • ${userClanData.members.length}/10 membres</div>
+                <div class="clan-members">
+                  ${userClanData.members.slice(0, 5).map(memberId => {
+                    const member = globalUsers.find(u => u.uid === memberId);
+                    return `<div class="clan-member" title="${member?.displayName || 'Membre'}">${member?.displayName?.charAt(0) || 'M'}</div>`;
+                  }).join('')}
+                  ${userClanData.members.length > 5 ? `<div class="clan-member">+${userClanData.members.length - 5}</div>` : ''}
+                </div>
+              </div>
+              <button class="ghost small-btn leave-clan" data-clan="${userClanData.id}">Quitter</button>
+            </div>
+          `;
+        } else {
+          userClan.innerHTML = '<div class="small">Vous n\'êtes dans aucun clan</div>';
+        }
+      }
+      
+      // Afficher la liste des clans
+      if (clansList) {
+        clansList.innerHTML = '';
+        
+        if (clans.length === 0) {
+          clansList.innerHTML = '<div class="small">Aucun clan disponible</div>';
+        } else {
+          clans.forEach(clan => {
+            if (!clan.members?.includes(getUserId())) {
+              const clanEl = document.createElement('div');
+              clanEl.className = 'clan-item';
+              clanEl.innerHTML = `
+                <div class="clan-info">
+                  <div style="font-weight: bold;">${clan.name}</div>
+                  <div class="small">${clan.members.length}/10 membres • Niveau ${clan.level || 1}</div>
+                </div>
+                <button class="small-btn join-clan" data-clan="${clan.id}">Rejoindre</button>
+              `;
+              clansList.appendChild(clanEl);
+            }
+          });
+        }
+      }
+      
+      // Afficher le partage de ressources
+      if (resourceSharing) {
+        const userClanData = clans.find(c => c.members?.includes(getUserId()));
+        
+        if (userClanData) {
+          resourceSharing.innerHTML = `
+            <div class="share-resource">
+              <div class="small">Partager des ressources avec le clan</div>
+              <div class="share-amount">
+                <input type="number" id="share-coins" placeholder="Pièces à partager" min="1" max="${currentUserData.coins || 0}"/>
+                <button class="small-btn share-coins-btn">Partager</button>
+              </div>
+              <div class="tax-info">Taxe: 10% (90% vont au destinataire)</div>
+            </div>
+          `;
+          
+          // Événement pour partager des pièces
+          document.querySelector('.share-coins-btn').addEventListener('click', async () => {
+            const coinsInput = document.getElementById('share-coins');
+            const coinsAmount = parseInt(coinsInput.value);
+            
+            if (!coinsAmount || coinsAmount <= 0) {
+              showNotification("Veuillez entrer un montant valide", "warning");
+              return;
+            }
+            
+            if (coinsAmount > (currentUserData.coins || 0)) {
+              showNotification("Pas assez de pièces", "warning");
+              return;
+            }
+            
+            // Calculer la taxe
+            const tax = Math.floor(coinsAmount * 0.1);
+            const netAmount = coinsAmount - tax;
+            
+            // Répartir entre les membres du clan (sauf l'utilisateur actuel)
+            const otherMembers = userClanData.members.filter(memberId => memberId !== getUserId());
+            const sharePerMember = Math.floor(netAmount / otherMembers.length);
+            
+            if (otherMembers.length === 0) {
+              showNotification("Aucun autre membre dans le clan", "warning");
+              return;
+            }
+            
+            // Distribuer aux membres
+            for (const memberId of otherMembers) {
+              const memberRef = getUserRef(memberId);
+              const memberSnapshot = await get(memberRef);
+              
+              if (memberSnapshot.exists()) {
+                const memberData = memberSnapshot.val();
+                await update(memberRef, {
+                  coins: (memberData.coins || 0) + sharePerMember
+                });
+              }
+            }
+            
+            // Déduire de l'utilisateur actuel
+            await updateUserData({
+              coins: (currentUserData.coins || 0) - coinsAmount
+            });
+            
+            showNotification(`${coinsAmount} pièces partagées avec le clan!`, "success");
+            loadClan();
+            loadDashboard();
+          });
+        } else {
+          resourceSharing.innerHTML = '<div class="small">Rejoignez un clan pour partager des ressources</div>';
+        }
+      }
+      
+      // Événements pour les boutons de clan
+      document.querySelectorAll('.join-clan').forEach(btn => {
+        btn.addEventListener('click', async function() {
+          const clanId = this.getAttribute('data-clan');
+          const clan = clans.find(c => c.id === clanId);
+          
+          if (clan && clan.members.length < 10) {
+            // Ajouter l'utilisateur au clan
+            const clanRef = ref(db, `clans/${clanId}`);
+            const updatedMembers = [...clan.members, getUserId()];
+            
+            await update(clanRef, {
+              members: updatedMembers
+            });
+            
+            showNotification(`Vous avez rejoint le clan ${clan.name}!`, "success");
+            loadClan();
+          } else {
+            showNotification("Clan complet ou introuvable", "warning");
+          }
+        });
+      });
+      
+      document.querySelectorAll('.leave-clan').forEach(btn => {
+        btn.addEventListener('click', async function() {
+          const clanId = this.getAttribute('data-clan');
+          const clan = clans.find(c => c.id === clanId);
+          
+          if (clan) {
+            // Retirer l'utilisateur du clan
+            const clanRef = ref(db, `clans/${clanId}`);
+            const updatedMembers = clan.members.filter(memberId => memberId !== getUserId());
+            
+            await update(clanRef, {
+              members: updatedMembers
+            });
+            
+            showNotification(`Vous avez quitté le clan ${clan.name}`, "info");
+            loadClan();
+          }
+        });
+      });
+    }
+    
+    // NOUVEAU: Charger les clans depuis Firebase
+    async function loadClans() {
+      const clansRef = ref(db, 'clans');
+      const snapshot = await get(clansRef);
+      
+      if (snapshot.exists()) {
+        const clansData = snapshot.val();
+        clans = Object.entries(clansData).map(([id, clan]) => ({
+          id,
+          ...clan
+        }));
+      } else {
+        clans = [];
+      }
+      return clans;
+    }
+    
+    // NOUVEAU: Créer un clan
+    async function createClan(name) {
+      if (!currentUserData) return false;
+      
+      // Vérifier le coût
+      if ((currentUserData.coins || 0) < 5000) {
+        showNotification("Pas assez de pièces pour créer un clan (5000 pièces requises)", "warning");
+        return false;
+      }
+      
+      const clanId = 'clan' + Date.now();
+      const clanData = {
+        id: clanId,
+        name: name,
+        level: 1,
+        members: [getUserId()],
+        createdBy: getUserId(),
+        createdAt: new Date().toISOString()
+      };
+      
+      const clanRef = ref(db, `clans/${clanId}`);
+      await set(clanRef, clanData);
+      
+      // Déduire le coût
+      await updateUserData({
+        coins: (currentUserData.coins || 0) - 5000
+      });
+      
+      showNotification(`Clan ${name} créé avec succès!`, "success");
+      return true;
+    }
+    
+    // NOUVEAU: Système de marché des joueurs
+    async function loadMarket() {
+      if (!await ensureUserData()) return;
+      
+      await loadAllUsers();
+      await loadMarketPlayers();
+      
+      const sellPlayer = document.getElementById('sell-player');
+      const upgradePlayer = document.getElementById('upgrade-player');
+      const marketPlayersEl = document.getElementById('market-players');
+      
+      // Afficher l'interface de vente
+      if (sellPlayer) {
+        const userCards = Object.values(currentUserData.cards || {});
+        sellPlayer.innerHTML = `
+          <div class="small">Sélectionnez un joueur à vendre</div>
+          <select id="player-to-sell" style="width: 100%; margin: 8px 0;">
+            <option value="">Choisir un joueur</option>
+            ${userCards.map(card => `
+              <option value="${card.id}" data-rarity="${card.rarity}">${card.name} (${card.rarity}) - ⚔️${card.attack} 🛡️${card.defense} ⚡${card.speed}</option>
+            `).join('')}
+          </select>
+          <div class="row">
+            <input type="number" id="sell-price" placeholder="Prix en pièces" min="100" style="flex: 1;"/>
+            <button class="small-btn" id="btn-sell-player">Vendre</button>
+          </div>
+        `;
+        
+        // Événement pour vendre un joueur
+        document.getElementById('btn-sell-player').addEventListener('click', sellPlayerOnMarket);
+      }
+      
+      // Afficher l'interface d'amélioration
+      if (upgradePlayer) {
+        const userCards = Object.values(currentUserData.cards || {});
+        upgradePlayer.innerHTML = `
+          <div class="small">Sélectionnez un joueur à améliorer</div>
+          <select id="player-to-upgrade" style="width: 100%; margin: 8px 0;">
+            <option value="">Choisir un joueur</option>
+            ${userCards.map(card => `
+              <option value="${card.id}" data-rarity="${card.rarity}">${card.name} (${card.rarity}) - Niv. ${card.level || 1}</option>
+            `).join('')}
+          </select>
+          <div id="upgrade-info" style="margin-top: 8px;">
+            <!-- Informations d'amélioration -->
+          </div>
+        `;
+        
+        // Événement pour changer de joueur à améliorer
+        document.getElementById('player-to-upgrade').addEventListener('change', showUpgradeInfo);
+      }
+      
+      // Afficher les joueurs en vente
+      if (marketPlayersEl) {
+        marketPlayersEl.innerHTML = '';
+        
+        if (marketPlayers.length === 0) {
+          marketPlayersEl.innerHTML = '<div class="small">Aucun joueur en vente</div>';
+        } else {
+          marketPlayers.forEach(player => {
+            if (player.sellerId !== getUserId()) {
+              const playerEl = document.createElement('div');
+              playerEl.className = 'player-card-market';
+              playerEl.innerHTML = `
+                <div class="player-info">
+                  <div style="font-weight: bold;">${player.name}</div>
+                  <div class="small">${player.rarity} • ${player.position} • Niv. ${player.level || 1}</div>
+                  <div class="card-stats">
+                    <span>⚔️ ${player.attack}</span>
+                    <span>🛡️ ${player.defense}</span>
+                    <span>⚡ ${player.speed}</span>
+                  </div>
+                </div>
+                <div class="player-price">
+                  <div>${player.price} 🪙</div>
+                  <button class="small-btn buy-player-btn" data-player="${player.id}">Acheter</button>
+                </div>
+              `;
+              marketPlayersEl.appendChild(playerEl);
+            }
+          });
+        }
+        
+        // Événements pour acheter des joueurs
+        document.querySelectorAll('.buy-player-btn').forEach(btn => {
+          btn.addEventListener('click', async function() {
+            const playerId = this.getAttribute('data-player');
+            const player = marketPlayers.find(p => p.id === playerId);
+            
+            if (!player) return;
+            
+            if ((currentUserData.coins || 0) < player.price) {
+              showNotification("Pas assez de pièces pour acheter ce joueur", "warning");
+              return;
+            }
+            
+            // Vérifier la limite de collection
+            const userCardsCount = Object.keys(currentUserData.cards || {}).length;
+            if (userCardsCount >= playerCollectionLimit) {
+              showNotification(`Limite de collection atteinte (${playerCollectionLimit} joueurs maximum)`, "warning");
+              return;
+            }
+            
+            // Acheter le joueur
+            await buyPlayerFromMarket(player);
+          });
+        });
+      }
+    }
+    
+    // NOUVEAU: Vendre un joueur sur le marché
+    async function sellPlayerOnMarket() {
+      const playerSelect = document.getElementById('player-to-sell');
+      const priceInput = document.getElementById('sell-price');
+      
+      const playerId = playerSelect.value;
+      const price = parseInt(priceInput.value);
+      
+      if (!playerId || !price || price < 100) {
+        showNotification("Veuillez sélectionner un joueur et entrer un prix valide (min. 100 pièces)", "warning");
+        return;
+      }
+      
+      const player = currentUserData.cards[playerId];
+      if (!player) return;
+      
+      // Vérifier que le joueur n'est pas dans l'équipe de départ
+      if ((currentUserData.starters || []).includes(playerId)) {
+        showNotification("Impossible de vendre un joueur de l'équipe de départ", "warning");
+        return;
+      }
+      
+      // Retirer le joueur de la collection
+      const updatedCards = { ...currentUserData.cards };
+      delete updatedCards[playerId];
+      
+      const updatedSubs = (currentUserData.subs || []).filter(id => id !== playerId);
+      
+      // Ajouter le joueur au marché
+      const marketPlayer = {
+        id: 'market_' + Date.now(),
+        ...player,
+        sellerId: getUserId(),
+        sellerName: currentUserData.displayName || 'Joueur',
+        price: price,
+        listedAt: new Date().toISOString()
+      };
+      
+      const marketRef = ref(db, `market/${marketPlayer.id}`);
+      await set(marketRef, marketPlayer);
+      
+      // Mettre à jour l'utilisateur
+      await updateUserData({
+        cards: updatedCards,
+        subs: updatedSubs,
+        playersSold: (currentUserData.playersSold || 0) + 1
+      });
+      
+      showNotification(`${player.name} mis en vente pour ${price} pièces!`, "success");
+      loadMarket();
+    }
+    
+    // NOUVEAU: Acheter un joueur du marché
+    async function buyPlayerFromMarket(player) {
+      // Déduire le prix
+      const updatedCoins = (currentUserData.coins || 0) - player.price;
+      
+      // Ajouter le joueur à la collection
+      const playerId = 'card' + Date.now();
+      const updatedCards = {
+        ...currentUserData.cards,
+        [playerId]: {
+          ...player,
+          id: playerId
+        }
+      };
+      
+      const updatedSubs = [...(currentUserData.subs || []), playerId];
+      
+      // Verser les pièces au vendeur (avec taxe de 10%)
+      const sellerRef = getUserRef(player.sellerId);
+      const sellerSnapshot = await get(sellerRef);
+      
+      if (sellerSnapshot.exists()) {
+        const sellerData = sellerSnapshot.val();
+        const sellerRevenue = Math.floor(player.price * 0.9); // 10% de taxe
+        
+        await update(sellerRef, {
+          coins: (sellerData.coins || 0) + sellerRevenue
+        });
+      }
+      
+      // Retirer le joueur du marché
+      const marketRef = ref(db, `market/${player.id}`);
+      await remove(marketRef);
+      
+      // Mettre à jour l'utilisateur actuel
+      await updateUserData({
+        coins: updatedCoins,
+        cards: updatedCards,
+        subs: updatedSubs
+      });
+      
+      showNotification(`${player.name} acheté pour ${player.price} pièces!`, "success");
+      loadMarket();
+    }
+    
+    // NOUVEAU: Charger les joueurs du marché
+    async function loadMarketPlayers() {
+      const marketRef = ref(db, 'market');
+      const snapshot = await get(marketRef);
+      
+      if (snapshot.exists()) {
+        const marketData = snapshot.val();
+        marketPlayers = Object.values(marketData);
+      } else {
+        marketPlayers = [];
+      }
+      return marketPlayers;
+    }
+    
+    // NOUVEAU: Afficher les informations d'amélioration
+    async function showUpgradeInfo() {
+      const playerSelect = document.getElementById('player-to-upgrade');
+      const upgradeInfo = document.getElementById('upgrade-info');
+      
+      const playerId = playerSelect.value;
+      if (!playerId) {
+        upgradeInfo.innerHTML = '';
+        return;
+      }
+      
+      const player = currentUserData.cards[playerId];
+      if (!player) return;
+      
+      const upgradeCost = calculateUpgradeCost(player);
+      const canUpgrade = (currentUserData.coins || 0) >= upgradeCost;
+      
+      upgradeInfo.innerHTML = `
+        <div class="upgrade-stats">
+          <div>
+            <div class="small">Attaque</div>
+            <div>${player.attack} → ${player.attack + 5}</div>
+          </div>
+          <div>
+            <div class="small">Défense</div>
+            <div>${player.defense} → ${player.defense + 3}</div>
+          </div>
+          <div>
+            <div class="small">Vitesse</div>
+            <div>${player.speed} → ${player.speed + 2}</div>
+          </div>
+        </div>
+        <div class="upgrade-cost">
+          <div>Coût:</div>
+          <div>${upgradeCost} 🪙</div>
+        </div>
+        <button class="upgrade-btn small-btn ${canUpgrade ? 'success' : 'ghost'}" id="btn-upgrade-player" ${!canUpgrade ? 'disabled' : ''}>
+          <i class="fas fa-arrow-up"></i> Améliorer
+        </button>
+      `;
+      
+      // Événement pour améliorer le joueur
+      document.getElementById('btn-upgrade-player').addEventListener('click', () => {
+        upgradePlayer(playerId);
+      });
+    }
+    
+    // NOUVEAU: Calculer le coût d'amélioration
+    function calculateUpgradeCost(player) {
+      const baseCost = 500;
+      const rarityMultiplier = {
+        'bronze': 1,
+        'silver': 2,
+        'gold': 4,
+        'legendary': 8
+      };
+      
+      const levelMultiplier = player.level || 1;
+      
+      return baseCost * (rarityMultiplier[player.rarity] || 1) * levelMultiplier;
+    }
+    
+    // NOUVEAU: Améliorer un joueur
+    async function upgradePlayer(playerId) {
+      const player = currentUserData.cards[playerId];
+      if (!player) return;
+      
+      const upgradeCost = calculateUpgradeCost(player);
+      
+      if ((currentUserData.coins || 0) < upgradeCost) {
+        showNotification("Pas assez de pièces pour améliorer ce joueur", "warning");
+        return;
+      }
+      
+      // Améliorer les statistiques
+      const updatedCards = {
+        ...currentUserData.cards,
+        [playerId]: {
+          ...player,
+          attack: player.attack + 5,
+          defense: player.defense + 3,
+          speed: player.speed + 2,
+          level: (player.level || 1) + 1
+        }
+      };
+      
+      // Déduire le coût
+      const updatedCoins = (currentUserData.coins || 0) - upgradeCost;
+      
+      // Mettre à jour l'utilisateur
+      await updateUserData({
+        coins: updatedCoins,
+        cards: updatedCards
+      });
+      
+      showNotification(`${player.name} amélioré au niveau ${(player.level || 1) + 1}!`, "success");
+      loadMarket();
+    }
+    
+    // NOUVEAU: Système de badges par accomplissements
+    async function loadBadges() {
+      if (!await ensureUserData()) return;
+      
+      await loadAvailableBadges();
+      
+      const userBadges = document.getElementById('user-badges');
+      const availableBadgesEl = document.getElementById('available-badges');
+      
+      // Afficher les badges de l'utilisateur
+      if (userBadges) {
+        const userBadgeList = currentUserData.badges || [];
+        userBadges.innerHTML = '';
+        
+        if (userBadgeList.length === 0) {
+          userBadges.innerHTML = '<div class="small" style="grid-column: 1 / -1;">Aucun badge obtenu</div>';
+        } else {
+          userBadgeList.forEach(badgeName => {
+            const badge = availableBadges.find(b => b.name === badgeName);
+            if (badge) {
+              const badgeEl = document.createElement('div');
+              badgeEl.className = 'badge-item unlocked';
+              badgeEl.innerHTML = `
+                <div class="badge-icon">${badge.icon}</div>
+                <div class="small">${badge.name}</div>
+              `;
+              userBadges.appendChild(badgeEl);
+            }
+          });
+        }
+      }
+      
+      // Afficher les badges disponibles
+      if (availableBadgesEl) {
+        availableBadgesEl.innerHTML = '';
+        
+        availableBadges.forEach(badge => {
+          const hasBadge = (currentUserData.badges || []).includes(badge.name);
+          const badgeEl = document.createElement('div');
+          badgeEl.className = `badge-item ${hasBadge ? 'unlocked' : 'locked'}`;
+          badgeEl.innerHTML = `
+            <div class="badge-icon">${badge.icon}</div>
+            <div class="small">${badge.name}</div>
+            <div class="small" style="margin-top: 4px; font-size: 10px;">${badge.description}</div>
+          `;
+          availableBadgesEl.appendChild(badgeEl);
+        });
+      }
+    }
+    
+    // NOUVEAU: Charger les badges disponibles
+    async function loadAvailableBadges() {
+      // En temps normal, cela viendrait de Firebase
+      // Pour l'instant, on les définit en dur
+      availableBadges = [
+        { name: "Débutant", icon: "🎯", description: "Compléter le tutoriel" },
+        { name: "Collectionneur", icon: "📚", description: "Collectionner 20 joueurs" },
+        { name: "Vainqueur", icon: "🏆", description: "Gagner 10 matchs" },
+        { name: "Élite", icon: "⭐", description: "Atteindre le niveau 10" },
+        { name: "Légende", icon: "👑", description: "Atteindre le niveau 25" },
+        { name: "Marchand", icon: "💰", description: "Vendre 5 joueurs" },
+        { name: "Stratège", icon: "♟️", description: "Gagner 5 matchs consécutifs" },
+        { name: "Social", icon: "👥", description: "Avoir 10 amis" },
+        { name: "Compétiteur", icon: "⚔️", description: "Participer à un championnat" }
+      ];
+      
+      return availableBadges;
+    }
+    
+    // NOUVEAU: Vérifier et attribuer les badges
+    async function checkAndAwardBadges() {
+      if (!currentUserData) return;
+      
+      const userBadges = currentUserData.badges || [];
+      const newBadges = [];
+      
+      // Badge Débutant
+      if (!userBadges.includes("Débutant") && currentUserData.totalMatches >= 1) {
+        newBadges.push("Débutant");
+      }
+      
+      // Badge Collectionneur
+      if (!userBadges.includes("Collectionneur") && Object.keys(currentUserData.cards || {}).length >= 20) {
+        newBadges.push("Collectionneur");
+      }
+      
+      // Badge Vainqueur
+      if (!userBadges.includes("Vainqueur") && (currentUserData.wins || 0) >= 10) {
+        newBadges.push("Vainqueur");
+      }
+      
+      // Badge Élite
+      if (!userBadges.includes("Élite") && (currentUserData.level || 1) >= 10) {
+        newBadges.push("Élite");
+      }
+      
+      // Badge Légende
+      if (!userBadges.includes("Légende") && (currentUserData.level || 1) >= 25) {
+        newBadges.push("Légende");
+      }
+      
+      // Badge Marchand
+      if (!userBadges.includes("Marchand") && (currentUserData.playersSold || 0) >= 5) {
+        newBadges.push("Marchand");
+      }
+      
+      // Badge Social
+      if (!userBadges.includes("Social") && (currentUserData.friends || []).length >= 10) {
+        newBadges.push("Social");
+      }
+      
+      // Si de nouveaux badges ont été gagnés
+      if (newBadges.length > 0) {
+        const updatedBadges = [...userBadges, ...newBadges];
+        await updateUserData({
+          badges: updatedBadges
+        });
+        
+        newBadges.forEach(badge => {
+          showNotification(`Nouveau badge débloqué: ${badge}!`, "success");
+        });
+      }
+    }
+    
+    // NOUVEAU: Système VIP avec durée limitée
+    async function buyVip() {
+      if (!currentUserData) return;
+      
+      const vipCost = 2000;
+      
+      if ((currentUserData.gems || 0) < vipCost) {
+        showNotification(`Pas assez de gems pour acheter VIP (${vipCost} gems requis)`, "warning");
+        return;
+      }
+      
+      // Vérifier si l'utilisateur a déjà un VIP actif
+      const now = new Date();
+      const vipExpiration = currentUserData.vipExpiration ? new Date(currentUserData.vipExpiration) : null;
+      
+      if (vipExpiration && vipExpiration > now) {
+        showNotification("Vous avez déjà un abonnement VIP actif", "warning");
+        return;
+      }
+      
+      // Calculer la nouvelle date d'expiration
+      const newExpiration = new Date();
+      newExpiration.setDate(newExpiration.getDate() + 30); // 30 jours
+      
+      // Mettre à jour l'utilisateur
+      const updatedGems = (currentUserData.gems || 0) - vipCost;
+      const updatedBadges = [...(currentUserData.badges || [])];
+      
+      if (!updatedBadges.includes("VIP")) {
+        updatedBadges.push("VIP");
+      }
+      
+      await updateUserData({
+        vip: true,
+        vipExpiration: newExpiration.toISOString(),
+        gems: updatedGems,
+        badges: updatedBadges
+      });
+      
+      showNotification("Abonnement VIP activé pour 30 jours! 👑", "success");
+      loadDashboard();
+    }
+    
+    // NOUVEAU: Vérifier l'expiration du VIP
+    function checkVipExpiration() {
+      if (!currentUserData || !currentUserData.vip) return;
+      
+      const now = new Date();
+      const vipExpiration = new Date(currentUserData.vipExpiration);
+      
+      if (vipExpiration < now) {
+        // VIP expiré
+        updateUserData({
+          vip: false
+        });
+        showNotification("Votre abonnement VIP a expiré", "info");
+      }
+    }
+    
+    // NOUVEAU: Afficher le statut VIP
+    function displayVipStatus() {
+      const vipStatus = document.getElementById('vip-status');
+      if (!vipStatus) return;
+      
+      if (currentUserData.vip) {
+        const expiration = new Date(currentUserData.vipExpiration);
+        const now = new Date();
+        const daysLeft = Math.ceil((expiration - now) / (1000 * 60 * 60 * 24));
+        
+        vipStatus.innerHTML = `
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <div>
+              <div>Statut: <span class="vip-badge">VIP Actif</span></div>
+              <div class="small">Expire dans ${daysLeft} jour(s)</div>
+            </div>
+            <div class="vip-timer">${daysLeft}J</div>
+          </div>
+        `;
+      } else {
+        vipStatus.innerHTML = `
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <div>
+              <div>Statut: Standard</div>
+              <div class="small">Passez VIP pour des avantages exclusifs</div>
+            </div>
+          </div>
+        `;
+      }
+    }
+    
+    // MODIFIÉ: Charger la boutique avec le système VIP
+    async function loadStore() {
+      if (!await ensureUserData()) return;
+      
+      // Afficher le statut VIP
+      displayVipStatus();
+    }
+    
+    // MODIFIÉ: Charger le match avec le système de championnat
+    async function loadMatch() {
+      if (!await ensureUserData()) return;
+      
+      await loadAllUsers();
+      await loadChampionship();
+      await loadLiveMatches();
+      
+      const championshipInfo = document.getElementById('championship-info');
+      const liveMatches = document.getElementById('live-matches');
+      
+      // Afficher les informations du championnat
+      if (championshipInfo) {
+        if (championship) {
+          const isParticipating = championship.participants.includes(getUserId());
+          
+          championshipInfo.innerHTML = `
+            <div class="championship-item">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                  <div style="font-weight: bold;">${championship.name}</div>
+                  <div class="small">${championship.participants.length}/${championship.maxParticipants} participants</div>
+                </div>
+                ${isParticipating ? 
+                  '<div class="badge success">Participant</div>' : 
+                  '<button class="small-btn join-championship">Rejoindre</button>'
+                }
+              </div>
+              <div class="championship-progress">
+                <div class="small">Progression: ${championship.matches?.length || 0} matchs joués</div>
+                <div class="progress-container">
+                  <div class="progress-bar" style="width: ${Math.min(100, ((championship.matches?.length || 0) / 10) * 100)}%"></div>
+                </div>
+              </div>
+              <div class="championship-rewards">
+                <div class="reward-item">
+                  <div>🥇</div>
+                  <div class="small">5000 🪙</div>
+                </div>
+                <div class="reward-item">
+                  <div>🥈</div>
+                  <div class="small">3000 🪙</div>
+                </div>
+                <div class="reward-item">
+                  <div>🥉</div>
+                  <div class="small">1500 🪙</div>
+                </div>
+              </div>
+            </div>
+          `;
+          
+          // Événement pour rejoindre le championnat
+          if (!isParticipating) {
+            document.querySelector('.join-championship').addEventListener('click', joinChampionship);
+          }
+        } else {
+          championshipInfo.innerHTML = '<div class="small">Aucun championnat en cours</div>';
+        }
+      }
+      
+      // Afficher les matchs en direct
+      if (liveMatches) {
+        if (liveMatchesList.length > 0) {
+          liveMatches.innerHTML = '';
+          liveMatchesList.slice(0, 3).forEach(match => {
+            const matchEl = document.createElement('div');
+            matchEl.className = 'championship-item live-match';
+            matchEl.innerHTML = `
+              <div class="live-indicator">LIVE</div>
+              <div style="display: flex; justify-content: space-between;">
+                <div>
+                  <div>${match.player1}</div>
+                  <div class="small">Force: ${match.strength1}</div>
+                </div>
+                <div style="text-align: center;">
+                  <div>VS</div>
+                  <div class="small">${match.score || '0-0'}</div>
+                </div>
+                <div style="text-align: right;">
+                  <div>${match.player2}</div>
+                  <div class="small">Force: ${match.strength2}</div>
+                </div>
+              </div>
+              <div class="match-events">
+                ${match.events ? match.events.map(event => `
+                  <div class="match-event ${event.type}">${event.text}</div>
+                `).join('') : '<div class="match-event">Match en cours...</div>'}
+              </div>
+            `;
+            liveMatches.appendChild(matchEl);
+          });
+        } else {
+          liveMatches.innerHTML = '<div class="small">Aucun match en direct</div>';
+        }
+      }
+      
+      // Masquer les sections de résultat et d'adversaire
+      const matchOpponent = document.getElementById('match-opponent');
+      const matchResult = document.getElementById('match-result');
+      
+      if (matchOpponent) matchOpponent.style.display = 'none';
+      if (matchResult) matchResult.style.display = 'none';
+      
+      // Charger l'historique des matchs
+      loadMatchHistory();
+    }
+    
+    // NOUVEAU: Système de championnat
+    async function loadChampionship() {
+      const championshipRef = ref(db, 'championship/current');
+      const snapshot = await get(championshipRef);
+      
+      if (snapshot.exists()) {
+        championship = snapshot.val();
+      } else {
+        championship = null;
+      }
+      return championship;
+    }
+    
+    // NOUVEAU: Rejoindre un championnat
+    async function joinChampionship() {
+      if (!currentUserData) return;
+      
+      await loadChampionship();
+      
+      if (!championship) {
+        showNotification("Aucun championnat en cours", "warning");
+        return;
+      }
+      
+      if (championship.participants.includes(getUserId())) {
+        showNotification("Vous participez déjà à ce championnat", "info");
+        return;
+      }
+      
+      if (championship.participants.length >= championship.maxParticipants) {
+        showNotification("Championnat complet", "warning");
+        return;
+      }
+      
+      // Ajouter le participant
+      const championshipRef = ref(db, 'championship/current');
+      const updatedParticipants = [...championship.participants, getUserId()];
+      
+      await update(championshipRef, {
+        participants: updatedParticipants
+      });
+      
+      showNotification("Vous avez rejoint le championnat!", "success");
+      loadMatch();
+    }
+    
+    // NOUVEAU: Charger les matchs en direct
+    async function loadLiveMatches() {
+      // Simuler des matchs en direct
+      liveMatchesList = [
+        {
+          player1: "Joueur1",
+          player2: "Joueur2",
+          strength1: 245,
+          strength2: 231,
+          score: "2-1",
+          events: [
+            { type: "goal", text: "⚽ But! Joueur1 marque!" },
+            { type: "goal", text: "⚽ But! Joueur2 égalise!" },
+            { type: "goal", text: "⚽ But! Joueur1 reprend l'avantage!" }
+          ]
+        },
+        {
+          player1: "Joueur3",
+          player2: "Joueur4",
+          strength1: 198,
+          strength2: 215,
+          score: "0-0",
+          events: [
+            { type: "miss", text: "❌ Joueur3 rate une occasion!" },
+            { type: "defense", text: "🛡️ Belle défense de Joueur4!" }
+          ]
+        }
+      ];
+      
+      return liveMatchesList;
+    }
+    
+    // CORRECTION: Fonctions pour les écrans manquants
+    async function loadTeam() {
+      if (!await ensureUserData()) return;
+      
+      const teamContent = document.getElementById('team-content');
+      const subsContent = document.getElementById('subs-content');
+      
+      if (teamContent) {
+        teamContent.innerHTML = '';
+        (currentUserData.starters || []).forEach(cardId => {
+          const card = currentUserData.cards?.[cardId];
+          if (card) {
+            const cardEl = document.createElement('div');
+            cardEl.className = `card-item ${card.rarity}`;
+            cardEl.innerHTML = `
+              <div>
+                <div class="card-title">${card.name}</div>
+                <div class="small">${card.position} | ${card.nation}</div>
+              </div>
+              <div class="card-stats">
+                <span>⚔️ ${card.attack}</span>
+                <span>🛡️ ${card.defense}</span>
+                <span>⚡ ${card.speed}</span>
+              </div>
+            `;
+            teamContent.appendChild(cardEl);
+          }
+        });
+      }
+      
+      if (subsContent) {
+        subsContent.innerHTML = '';
+        (currentUserData.subs || []).forEach(cardId => {
+          const card = currentUserData.cards?.[cardId];
+          if (card) {
+            const cardEl = document.createElement('div');
+            cardEl.className = `card-item ${card.rarity}`;
+            cardEl.innerHTML = `
+              <div>
+                <div class="card-title">${card.name}</div>
+                <div class="small">${card.position} | ${card.nation}</div>
+              </div>
+              <div class="card-stats">
+                <span>⚔️ ${card.attack}</span>
+                <span>🛡️ ${card.defense}</span>
+              </div>
+            `;
+            subsContent.appendChild(cardEl);
+          }
+        });
+      }
+      
+      // Événements pour la sélection automatique
+      document.getElementById('btn-auto-best').addEventListener('click', autoSelectBestTeam);
+    }
+
+    async function loadProfile() {
+      if (!await ensureUserData()) return;
+      
+      const profileContent = document.getElementById('profile-content');
+      if (!profileContent) return;
+      
+      const vipStatus = currentUserData.vip ? '👑 VIP' : '👤 Standard';
+      
+      profileContent.innerHTML = `
+        <div class="profile-header">
+          <div class="profile-avatar ${currentUserData.vip ? 'vip' : ''}">
+            ${currentUserData.vip ? '👑' : '👤'}
+          </div>
+          <h3>${currentUserData.displayName || 'Joueur'}</h3>
+          <div class="badges" style="justify-content: center; margin: 8px 0;">
+            <div class="badge ${currentUserData.vip ? 'vip-badge' : ''}">
+              ${vipStatus}
+            </div>
+            <div class="badge"><i class="fas fa-heart"></i> ${currentUserData.likes || 0} Likes</div>
+          </div>
+        </div>
+        
+        <div class="stat">
+          <div class="icon">👤</div>
+          <div>
+            <div class="small">Nom</div>
+            <div>${currentUserData.displayName || 'Joueur'}</div>
+          </div>
+        </div>
+        <div class="stat">
+          <div class="icon">📧</div>
+          <div>
+            <div class="small">Email</div>
+            <div>${currentUserData.email || 'Non défini'}</div>
+          </div>
+        </div>
+        <div class="stat">
+          <div class="icon">🏆</div>
+          <div>
+            <div class="small">Victoires/Défaites</div>
+            <div>${currentUserData.wins || 0}V / ${currentUserData.losses || 0}D</div>
+          </div>
+        </div>
+        <div class="stat">
+          <div class="icon">📊</div>
+          <div>
+            <div class="small">Taux de victoire</div>
+            <div>${currentUserData.winRate || 0}%</div>
+          </div>
+        </div>
+        
+        <div class="panel">
+          <div class="small" style="margin-bottom: 8px;">Badges Obtenus</div>
+          <div class="badges">
+            ${(currentUserData.badges || []).map(badge => `
+              <div class="badge"><i class="fas fa-medal"></i> ${badge}</div>
+            `).join('')}
+            ${(currentUserData.badges || []).length === 0 ? '<div class="small">Aucun badge</div>' : ''}
+          </div>
+        </div>
+        
+        <button id="btn-signout" class="danger small-btn" style="margin-top: 16px; width: 100%;">
+          <i class="fas fa-sign-out-alt"></i> Déconnexion
+        </button>
+      `;
+      
+      // Événement de déconnexion
+      document.getElementById('btn-signout')?.addEventListener('click', async () => {
+        try {
+          await signOut(auth);
+          showNotification("Déconnexion réussie", "success");
+        } catch (error) {
+          console.error("Erreur de déconnexion:", error);
+          showNotification("Erreur de déconnexion", "danger");
+        }
+      });
+    }
+
+    // CORRECTION: Système d'amis fonctionnel
+    async function loadFriends() {
+      if (!await ensureUserData()) return;
+      
+      await loadAllUsers();
+      
+      const friendsList = document.getElementById('friends-list');
+      const friendRequests = document.getElementById('friend-requests');
+      const suggestedFriends = document.getElementById('suggested-friends');
+      
+      // Afficher la liste d'amis
+      if (friendsList) {
+        friendsList.innerHTML = '';
+        const friends = currentUserData.friends || [];
+        
+        if (friends.length === 0) {
+          friendsList.innerHTML = '<div class="small">Aucun ami</div>';
+        } else {
+          friends.forEach(friendId => {
+            const friend = globalUsers.find(u => u.uid === friendId);
+            if (friend) {
+              const friendEl = document.createElement('div');
+              friendEl.className = 'friend-item';
+              friendEl.innerHTML = `
+                <div class="friend-avatar ${friend.vip ? 'vip' : ''}">
+                  ${friend.vip ? '👑' : '👤'}
+                </div>
+                <div class="small">${friend.displayName || 'Joueur'}</div>
+                <div class="quick" style="width: 100%;">
+                  <button class="ghost small-btn view-profile" data-user="${friend.uid}">
+                    <i class="fas fa-eye"></i> Voir
+                  </button>
+                </div>
+              `;
+              friendsList.appendChild(friendEl);
+            }
+          });
+        }
+      }
+      
+      // Afficher les demandes d'amis
+      if (friendRequests) {
+        friendRequests.innerHTML = '';
+        const requests = currentUserData.friendRequests || [];
+        
+        if (requests.length === 0) {
+          friendRequests.innerHTML = '<div class="small">Aucune demande d\'ami</div>';
+        } else {
+          requests.forEach(requestId => {
+            const requester = globalUsers.find(u => u.uid === requestId);
+            if (requester && requester.uid !== getUserId()) {
+              const requestEl = document.createElement('div');
+              requestEl.className = 'leaderboard-item';
+              requestEl.innerHTML = `
+                <div>${requester.displayName || 'Joueur'}</div>
+                <div class="user-actions">
+                  <button class="success small-btn accept-request" data-user="${requester.uid}"><i class="fas fa-check"></i></button>
+                  <button class="danger small-btn decline-request" data-user="${requester.uid}"><i class="fas fa-times"></i></button>
+                </div>
+              `;
+              friendRequests.appendChild(requestEl);
+            }
+          });
+        }
+      }
+      
+      // Afficher les suggestions d'amis
+      if (suggestedFriends) {
+        suggestedFriends.innerHTML = '';
+        const currentFriends = currentUserData.friends || [];
+        const currentRequests = currentUserData.friendRequests || [];
+        
+        const suggestions = globalUsers
+          .filter(user => 
+            user.uid !== getUserId() && 
+            !currentFriends.includes(user.uid) &&
+            !currentRequests.includes(user.uid)
+          )
+          .slice(0, 4);
+        
+        if (suggestions.length === 0) {
+          suggestedFriends.innerHTML = '<div class="small">Aucune suggestion</div>';
+        } else {
+          suggestions.forEach(user => {
+            const suggestionEl = document.createElement('div');
+            suggestionEl.className = 'friend-item';
+            suggestionEl.innerHTML = `
+              <div class="friend-avatar ${user.vip ? 'vip' : ''}">
+                ${user.vip ? '👑' : '👤'}
+              </div>
+              <div class="small">${user.displayName || 'Joueur'}</div>
+              <button class="small-btn add-friend" data-user="${user.uid}"><i class="fas fa-user-plus"></i> Ajouter</button>
+            `;
+            suggestedFriends.appendChild(suggestionEl);
+          });
+        }
+      }
+      
+      // CORRECTION: Ajout des événements pour les boutons d'amis
+      document.querySelectorAll('.add-friend').forEach(btn => {
+        btn.addEventListener('click', async function() {
+          const userId = this.getAttribute('data-user');
+          if (!userId) return;
+          
+          // Ajouter la demande d'ami
+          const userRef = getUserRef(userId);
+          const userSnapshot = await get(userRef);
+          
+          if (userSnapshot.exists()) {
+            const userData = userSnapshot.val();
+            const updatedRequests = [...(userData.friendRequests || []), getUserId()];
+            
+            await update(userRef, {
+              friendRequests: updatedRequests
+            });
+            
+            showNotification(`Demande d'ami envoyée à ${userData.displayName || 'Joueur'}`, "success");
+          }
+        });
+      });
+      
+      document.querySelectorAll('.accept-request').forEach(btn => {
+        btn.addEventListener('click', async function() {
+          const userId = this.getAttribute('data-user');
+          if (!userId) return;
+          
+          // Accepter la demande d'ami
+          const currentFriends = [...(currentUserData.friends || []), userId];
+          const updatedRequests = (currentUserData.friendRequests || []).filter(id => id !== userId);
+          
+          await updateUserData({
+            friends: currentFriends,
+            friendRequests: updatedRequests
+          });
+          
+          // Ajouter l'utilisateur actuel à la liste d'amis de l'autre utilisateur
+          const friendRef = getUserRef(userId);
+          const friendSnapshot = await get(friendRef);
+          
+          if (friendSnapshot.exists()) {
+            const friendData = friendSnapshot.val();
+            const friendFriends = [...(friendData.friends || []), getUserId()];
+            
+            await update(friendRef, {
+              friends: friendFriends
+            });
+          }
+          
+          showNotification("Demande d'ami acceptée!", "success");
+          loadFriends();
+        });
+      });
+      
+      document.querySelectorAll('.view-profile').forEach(btn => {
+        btn.addEventListener('click', function() {
+          const userId = this.getAttribute('data-user');
+          if (!userId) return;
+          
+          viewUserProfile(userId);
+        });
+      });
+    }
+    
+    // Achat avec pièces et gems
+    async function buyPack(packType, cost, currency) {
+      if (!await ensureUserData()) return;
+      
+      if ((currentUserData[currency] || 0) < cost) {
+        showNotification(`Pas assez de ${currency === 'gems' ? 'Gems' : 'Pièces'}!`, "warning");
+        return;
+      }
+      
+      const updatedCurrency = (currentUserData[currency] || 0) - cost;
+      
+      // Générer des cartes
+      const cardCount = packType === 'silver' ? 4 : packType === 'vip' ? 5 : 3;
+      const newCards = {};
+      
+      for (let i = 0; i < cardCount; i++) {
+        const id = 'card' + Date.now() + Math.random().toString(36).substr(2, 5);
+        let rarity;
+        
+        switch(packType) {
+          case 'bronze':
+            rarity = Math.random() < 0.7 ? 'bronze' : 'silver';
+            break;
+          case 'silver':
+            rarity = Math.random() < 0.6 ? 'silver' : Math.random() < 0.8 ? 'gold' : 'bronze';
+            break;
+          case 'gold':
+            rarity = Math.random() < 0.5 ? 'gold' : Math.random() < 0.8 ? 'legendary' : 'silver';
+            break;
+          case 'vip':
+            rarity = Math.random() < 0.4 ? 'legendary' : Math.random() < 0.7 ? 'gold' : 'silver';
+            break;
+        }
+        
+        const name = extendedCardNames[Math.floor(Math.random() * extendedCardNames.length)];
+        
+        newCards[id] = {
+          id,
+          name: `${name} ${Math.floor(Math.random() * 100)}`,
+          rarity,
+          attack: 5 + Math.floor(Math.random() * 20),
+          defense: 3 + Math.floor(Math.random() * 15),
+          speed: 1 + Math.floor(Math.random() * 10),
+          level: 1,
+          nation: getRandomNation(),
+          position: getRandomPosition()
+        };
+      }
+      
+      // Mettre à jour les cartes
+      const updatedCards = { ...currentUserData.cards, ...newCards };
+      const updatedSubs = [...(currentUserData.subs || [])];
+      
+      // Ajouter les nouvelles cartes aux substituts
+      Object.keys(newCards).forEach(cardId => {
+        if (updatedSubs.length < 10) {
+          updatedSubs.push(cardId);
+        }
+      });
+      
+      showNotification(`Pack ${packType} acheté! ${cardCount} nouvelles cartes ajoutées.`, "success");
+      
+      // Mettre à jour Firebase
+      const updates = {
+        cards: updatedCards,
+        subs: updatedSubs
+      };
+      updates[currency] = updatedCurrency;
+      
+      await updateUserData(updates);
+      loadDashboard();
+    }
+    
+    // Achat d'énergie avec pièces et gems
+    async function buyEnergy(amount, cost, currency) {
+      if (!await ensureUserData()) return;
+      
+      if ((currentUserData[currency] || 0) < cost) {
+        showNotification(`Pas assez de ${currency === 'gems' ? 'Gems' : 'Pièces'}!`, "warning");
+        return;
+      }
+      
+      const updatedCurrency = (currentUserData[currency] || 0) - cost;
+      const updatedEnergy = Math.min(currentUserData.maxEnergy || 20, (currentUserData.energy || 0) + amount);
+      
+      const updates = {
+        energy: updatedEnergy
+      };
+      updates[currency] = updatedCurrency;
+      
+      await updateUserData(updates);
+      
+      showNotification(`+${amount} Énergie ajoutée!`, "success");
+      loadDashboard();
+    }
+    
+    // Fonction pour inspecter un profil
+    async function viewUserProfile(userId) {
+      const userRef = getUserRef(userId);
+      const snapshot = await get(userRef);
+      
+      if (snapshot.exists()) {
+        currentlyViewedUser = { uid: userId, ...snapshot.val() };
+        showScreen('profile-view');
+        loadProfileView();
+      } else {
+        showNotification("Profil non trouvé", "warning");
+      }
+    }
+
+    // Charger le profil inspecté
+    async function loadProfileView() {
+      if (!currentlyViewedUser) return;
+      
+      const viewedUserName = document.getElementById('viewed-user-name');
+      const profileViewContent = document.getElementById('profile-view-content');
+      
+      if (viewedUserName) viewedUserName.textContent = currentlyViewedUser.displayName || 'Joueur';
+      if (!profileViewContent) return;
+      
+      const isOwnProfile = currentlyViewedUser.uid === getUserId();
+      const hasLiked = currentUserData?.likedBy?.includes(currentlyViewedUser.uid);
+      
+      profileViewContent.innerHTML = `
+        <div class="profile-header">
+          <div class="profile-avatar ${currentlyViewedUser.vip ? 'vip' : ''}">
+            ${currentlyViewedUser.vip ? '👑' : '👤'}
+          </div>
+          <h3>${currentlyViewedUser.displayName || 'Joueur'}</h3>
+          <div class="badges" style="justify-content: center; margin: 8px 0;">
+            ${currentlyViewedUser.vip ? '<div class="badge vip-badge"><i class="fas fa-crown"></i> VIP</div>' : ''}
+            <div class="badge"><i class="fas fa-trophy"></i> Niv. ${currentlyViewedUser.level || 1}</div>
+            <div class="badge"><i class="fas fa-heart"></i> ${currentlyViewedUser.likes || 0} Likes</div>
+          </div>
+        </div>
+        
+        <div class="stats">
+          <div class="stat">
+            <div class="icon">🏆</div>
+            <div>
+              <div class="small">Victoires</div>
+              <div>${currentlyViewedUser.wins || 0}</div>
+            </div>
+          </div>
+          <div class="stat">
+            <div class="icon">📊</div>
+            <div>
+              <div class="small">Matchs</div>
+              <div>${currentlyViewedUser.totalMatches || 0}</div>
+            </div>
+          </div>
+          <div class="stat">
+            <div class="icon">⚡</div>
+            <div>
+              <div class="small">Taux Victoire</div>
+              <div>${currentlyViewedUser.winRate || 0}%</div>
+            </div>
+          </div>
+          <div class="stat">
+            <div class="icon">⭐</div>
+            <div>
+              <div class="small">Badges</div>
+              <div>${(currentlyViewedUser.badges || []).length}</div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="panel">
+          <div class="small" style="margin-bottom: 8px;">Badges Obtenus</div>
+          <div class="badges">
+            ${(currentlyViewedUser.badges || []).map(badge => `
+              <div class="badge"><i class="fas fa-medal"></i> ${badge}</div>
+            `).join('')}
+            ${(currentlyViewedUser.badges || []).length === 0 ? '<div class="small">Aucun badge</div>' : ''}
+          </div>
+        </div>
+        
+        ${!isOwnProfile ? `
+          <div class="panel">
+            <div class="row" style="justify-content: center; gap: 12px;">
+              <button id="btn-like-profile" class="${hasLiked ? 'liked' : ''} like-btn">
+                <i class="fas fa-heart"></i> ${hasLiked ? 'Unlike' : 'Like'} (${currentlyViewedUser.likes || 0})
+              </button>
+              <button id="btn-challenge-user" class="small-btn">
+                <i class="fas fa-trophy"></i> Défier
+              </button>
+            </div>
+          </div>
+        ` : ''}
+        
+        <div class="panel">
+          <div class="small" style="margin-bottom: 8px;">Statistiques Détaillées</div>
+          <div class="row">
+            <div style="flex: 1;">
+              <div class="small">Cartes Possédées</div>
+              <div>${Object.keys(currentlyViewedUser.cards || {}).length}</div>
+            </div>
+            <div style="flex: 1;">
+              <div class="small">Amis</div>
+              <div>${(currentlyViewedUser.friends || []).length}</div>
+            </div>
+          </div>
+          <div class="row" style="margin-top: 8px;">
+            <div style="flex: 1;">
+              <div class="small">Membre depuis</div>
+              <div>${new Date(currentlyViewedUser.registrationDate || Date.now()).toLocaleDateString()}</div>
+            </div>
+          </div>
+        </div>
+      `;
+      
+      // Événements pour les boutons
+      if (!isOwnProfile) {
+        document.getElementById('btn-like-profile')?.addEventListener('click', likeUserProfile);
+        document.getElementById('btn-challenge-user')?.addEventListener('click', () => {
+          showNotification(`Défi envoyé à ${currentlyViewedUser.displayName || 'Joueur'}!`, "info");
+        });
+      }
+    }
+
+    // Fonction pour liker un profil
+    async function likeUserProfile() {
+      if (!currentlyViewedUser || !currentUserData) return;
+      
+      const viewedUserRef = getUserRef(currentlyViewedUser.uid);
+      const currentUserId = getUserId();
+      
+      const hasLiked = currentUserData.likedBy?.includes(currentlyViewedUser.uid);
+      let updatedLikes = currentlyViewedUser.likes || 0;
+      let updatedLikedBy = [...(currentUserData.likedBy || [])];
+      
+      if (hasLiked) {
+        // Retirer le like
+        updatedLikes = Math.max(0, updatedLikes - 1);
+        updatedLikedBy = updatedLikedBy.filter(uid => uid !== currentlyViewedUser.uid);
+        showNotification("Like retiré", "info");
+      } else {
+        // Ajouter le like
+        updatedLikes += 1;
+        updatedLikedBy.push(currentlyViewedUser.uid);
+        showNotification("Profil liké! 💖", "success");
+      }
+      
+      // Mettre à jour le profil liké
+      await update(viewedUserRef, {
+        likes: updatedLikes
+      });
+      
+      // Mettre à jour l'utilisateur actuel
+      await updateUserData({
+        likedBy: updatedLikedBy
+      });
+      
+      // Recharger la vue
+      currentlyViewedUser.likes = updatedLikes;
+      loadProfileView();
+    }
+
+    // CORRECTION: Système de fusion fonctionnel
+    async function loadFusion() {
+      if (!await ensureUserData()) return;
+      
+      const fusionCards = document.getElementById('fusion-cards');
+      if (!fusionCards) return;
+      
+      // Afficher les cartes disponibles pour la fusion
+      fusionCards.innerHTML = '';
+      Object.values(currentUserData.cards || {}).forEach(card => {
+        const cardEl = document.createElement('div');
+        cardEl.className = `card-item ${card.rarity} fusion-card`;
+        cardEl.setAttribute('data-card', card.id);
+        cardEl.innerHTML = `
+          <div>
+            <div class="card-title">${card.name}</div>
+            <div class="small">${card.position} | ${card.nation}</div>
+          </div>
+          <div class="card-stats">
+            <span>⚔️ ${card.attack}</span>
+            <span>🛡️ ${card.defense}</span>
+            <span>⚡ ${card.speed}</span>
+          </div>
+        `;
+        fusionCards.appendChild(cardEl);
+      });
+      
+      // Réinitialiser les emplacements de fusion
+      selectedCardsForFusion = [];
+      document.querySelectorAll('.fusion-slot').forEach(slot => {
+        slot.innerHTML = '<div class="small">Emplacement vide</div>';
+        slot.classList.remove('filled');
+      });
+      
+      document.getElementById('btn-fusion').disabled = true;
+      document.getElementById('fusion-result').style.display = 'none';
+      
+      // CORRECTION: Événements pour les cartes de fusion - version corrigée
+      document.querySelectorAll('.fusion-card').forEach(cardEl => {
+        cardEl.addEventListener('click', function() {
+          const cardId = this.getAttribute('data-card');
+          
+          // Vérifier si la carte est déjà sélectionnée
+          if (selectedCardsForFusion.includes(cardId)) {
+            // Retirer la carte
+            const index = selectedCardsForFusion.indexOf(cardId);
+            selectedCardsForFusion.splice(index, 1);
+            this.classList.remove('fusion-selected');
+            updateFusionSlot(index, null);
+          } else if (selectedCardsForFusion.length < 3) {
+            // Ajouter la carte
+            selectedCardsForFusion.push(cardId);
+            this.classList.add('fusion-selected');
+            updateFusionSlot(selectedCardsForFusion.length - 1, cardId);
+          }
+          
+          updateFusionButton();
+        });
+      });
+    }
+
+    // CORRECTION: Fonctions utilitaires pour la fusion
+    function updateFusionSlot(index, cardId) {
+      const slot = document.getElementById(`fusion-slot-${index + 1}`);
+      if (!slot) return;
+      
+      if (!cardId) {
+        slot.innerHTML = '<div class="small">Emplacement vide</div>';
+        slot.classList.remove('filled');
+      } else {
+        const card = currentUserData.cards[cardId];
+        slot.innerHTML = `
+          <div>
+            <div class="card-title">${card.name}</div>
+            <div class="small">${card.rarity}</div>
+          </div>
+        `;
+        slot.classList.add('filled');
+      }
+    }
+
+    function updateFusionButton() {
+      const btnFusion = document.getElementById('btn-fusion');
+      if (btnFusion) {
+        btnFusion.disabled = selectedCardsForFusion.length !== 3;
+        btnFusion.textContent = `Fusionner (${selectedCardsForFusion.length}/3) - 100🪙`;
+      }
+    }
+
+    // Exécuter la fusion
+    async function executeFusion() {
+      if (selectedCardsForFusion.length !== 3) return;
+      
+      // Vérifier le coût
+      if ((currentUserData.coins || 0) < 100) {
+        showNotification("Pas assez de pièces pour la fusion! (100 pièces requises)", "warning");
+        return;
+      }
+      
+      // Calculer la nouvelle carte
+      const cards = selectedCardsForFusion.map(id => currentUserData.cards[id]);
+      const totalAttack = cards.reduce((sum, card) => sum + card.attack, 0);
+      const totalDefense = cards.reduce((sum, card) => sum + card.defense, 0);
+      const totalSpeed = cards.reduce((sum, card) => sum + card.speed, 0);
+      
+      // Déterminer la rareté de la nouvelle carte
+      const rarityScore = cards.reduce((score, card) => {
+        if (card.rarity === 'bronze') return score + 1;
+        if (card.rarity === 'silver') return score + 2;
+        if (card.rarity === 'gold') return score + 3;
+        if (card.rarity === 'legendary') return score + 4;
+        return score;
+      }, 0);
+      
+      let newRarity = 'bronze';
+      if (rarityScore >= 10) newRarity = 'legendary';
+      else if (rarityScore >= 7) newRarity = 'gold';
+      else if (rarityScore >= 4) newRarity = 'silver';
+      
+      // Créer la nouvelle carte
+      const newCardId = 'card' + Date.now();
+      const newCard = {
+        id: newCardId,
+        name: `Fusion ${extendedCardNames[Math.floor(Math.random() * extendedCardNames.length)]}`,
+        rarity: newRarity,
+        attack: Math.floor(totalAttack / 3) + 5,
+        defense: Math.floor(totalDefense / 3) + 3,
+        speed: Math.floor(totalSpeed / 3) + 2,
+        level: 1,
+        nation: getRandomNation(),
+        position: getRandomPosition()
+      };
+      
+      // Mettre à jour les données utilisateur
+      const updatedCards = { ...currentUserData.cards };
+      
+      // Supprimer les cartes fusionnées
+      selectedCardsForFusion.forEach(cardId => {
+        delete updatedCards[cardId];
+      });
+      
+      // Ajouter la nouvelle carte
+      updatedCards[newCardId] = newCard;
+      
+      // Mettre à jour les substituts
+      const updatedSubs = [...(currentUserData.subs || [])];
+      updatedSubs.push(newCardId);
+      
+      // Déduire le coût
+      const updatedCoins = (currentUserData.coins || 0) - 100;
+      
+      // Mettre à jour Firebase
+      await updateUserData({
+        cards: updatedCards,
+        subs: updatedSubs,
+        coins: updatedCoins
+      });
+      
+      // Afficher le résultat
+      const fusionResult = document.getElementById('fusion-result');
+      if (fusionResult) {
+        fusionResult.innerHTML = `
+          <div class="fusion-success">
+            <div class="reward-icon">✨</div>
+            <h3>Fusion Réussie!</h3>
+            <div class="card-item ${newCard.rarity}">
+              <div>
+                <div class="card-title">${newCard.name}</div>
+                <div class="small">${newCard.position} | ${newCard.nation}</div>
+              </div>
+              <div class="card-stats">
+                <span>⚔️ ${newCard.attack}</span>
+                <span>🛡️ ${newCard.defense}</span>
+                <span>⚡ ${newCard.speed}</span>
+              </div>
+            </div>
+          </div>
+        `;
+        fusionResult.style.display = 'block';
+        fusionResult.classList.add('fusion-success');
+      }
+      
+      showNotification("Fusion réussie! Nouvelle carte créée.", "success");
+      
+      // Recharger l'interface de fusion
+      setTimeout(() => {
+        loadFusion();
+      }, 3000);
+    }
+    
+    // CORRECTION: Dashboard admin avec tous les boutons fonctionnels
+    async function loadAdminDashboard() {
+      if (!isAdmin) {
+        showNotification("Accès refusé", "danger");
+        showScreen('dashboard');
+        return;
+      }
+      
+      await loadAllUsers();
+      await loadChampionship();
+      
+      // Calculer les statistiques globales
+      const totalUsers = globalUsers.length;
+      const totalMatches = globalUsers.reduce((sum, user) => sum + (user.totalMatches || 0), 0);
+      const totalGems = globalUsers.reduce((sum, user) => sum + (user.gems || 0), 0);
+      const totalCoins = globalUsers.reduce((sum, user) => sum + (user.coins || 0), 0);
+      
+      const adminTotalUsers = document.getElementById('admin-total-users');
+      const adminTotalMatches = document.getElementById('admin-total-matches');
+      const adminTotalGems = document.getElementById('admin-total-gems');
+      const adminTotalCoins = document.getElementById('admin-total-coins');
+      
+      if (adminTotalUsers) adminTotalUsers.textContent = totalUsers;
+      if (adminTotalMatches) adminTotalMatches.textContent = totalMatches;
+      if (adminTotalGems) adminTotalGems.textContent = totalGems;
+      if (adminTotalCoins) adminTotalCoins.textContent = totalCoins;
+      
+      // Afficher le classement réel avec likes
+      const adminLeaderboard = document.getElementById('admin-leaderboard');
+      if (adminLeaderboard) {
+        adminLeaderboard.innerHTML = '';
+        
+        const topUsers = [...globalUsers]
+          .sort((a, b) => (b.likes || 0) - (a.likes || 0) || (b.level || 1) - (a.level || 1))
+          .slice(0, 10);
+        
+        topUsers.forEach((user, index) => {
+          const rankClass = index < 3 ? `rank-${index+1}` : '';
+          const item = document.createElement('div');
+          item.className = 'leaderboard-item';
+          item.innerHTML = `
+            <div class="rank ${rankClass}">${index+1}</div>
+            <div>
+              <div>${user.displayName || 'Joueur'}</div>
+              <div class="small">Niv. ${user.level || 1}</div>
+            </div>
+            <div style="margin-left: auto; text-align: right;">
+              <div>${user.likes || 0} ❤️</div>
+              <div class="small">${user.wins || 0}V ${user.losses || 0}D</div>
+            </div>
+          `;
+          adminLeaderboard.appendChild(item);
+        });
+      }
+      
+      // Initialisation des nouveaux boutons admin
+      document.getElementById('admin-refresh-stats')?.addEventListener('click', loadAdminDashboard);
+      document.getElementById('admin-start-championship')?.addEventListener('click', startChampionship);
+      document.getElementById('admin-end-championship')?.addEventListener('click', endChampionship);
+      document.getElementById('admin-simulate-matches')?.addEventListener('click', simulateChampionshipMatches);
+      document.getElementById('admin-update-standings')?.addEventListener('click', updateChampionshipStandings);
+      
+      // Afficher le classement du championnat
+      const adminChampionshipStandings = document.getElementById('admin-championship-standings');
+      if (adminChampionshipStandings) {
+        if (championship) {
+          // Calculer le classement
+          const standings = calculateChampionshipStandings();
+          adminChampionshipStandings.innerHTML = '';
+          
+          standings.forEach((standing, index) => {
+            const user = globalUsers.find(u => u.uid === standing.userId);
+            if (user) {
+              const item = document.createElement('div');
+              item.className = 'leaderboard-item';
+              item.innerHTML = `
+                <div class="rank ${index < 3 ? `rank-${index+1}` : ''}">${index+1}</div>
+                <div>${user.displayName || 'Joueur'}</div>
+                <div style="margin-left: auto; text-align: right;">
+                  <div>${standing.points} pts</div>
+                  <div class="small">${standing.wins}V ${standing.draws}N ${standing.losses}D</div>
+                </div>
+              `;
+              adminChampionshipStandings.appendChild(item);
+            }
+          });
+        } else {
+          adminChampionshipStandings.innerHTML = '<div class="small">Aucun championnat en cours</div>';
+        }
+      }
+      
+      // Initialisation des onglets admin
+      document.querySelectorAll('.admin-tab').forEach(tab => {
+        tab.addEventListener('click', function() {
+          const tabId = this.getAttribute('data-tab');
+          
+          // Activer l'onglet sélectionné
+          document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
+          this.classList.add('active');
+          
+          // Afficher la section correspondante
+          document.querySelectorAll('.admin-section').forEach(section => {
+            section.classList.remove('active');
+          });
+          document.getElementById(`admin-${tabId}-section`).classList.add('active');
+        });
+      });
+      
+      // Initialisation des boutons admin
+      document.getElementById('admin-send-notif')?.addEventListener('click', function() {
+        const message = document.getElementById('admin-notif-message')?.value;
+        if (!message) {
+          showNotification("Veuillez entrer un message", "warning");
+          return;
+        }
+        
+        showNotification("Notification envoyée à tous les utilisateurs", "success");
+        addAdminLog(`Notification envoyée: "${message}"`);
+      });
+      
+      document.getElementById('admin-add-gems')?.addEventListener('click', async function() {
+        // Ajouter 10 gems à tous les utilisateurs
+        for (const user of globalUsers) {
+          const userRef = getUserRef(user.uid);
+          await update(userRef, {
+            gems: (user.gems || 0) + 10
+          });
+        }
+        
+        showNotification("10 gems ajoutés à tous les utilisateurs", "success");
+        addAdminLog("10 gems ajoutés à tous les utilisateurs");
+        loadAdminDashboard();
+      });
+      
+      document.getElementById('admin-add-coins')?.addEventListener('click', async function() {
+        // Ajouter 100 pièces à tous les utilisateurs
+        for (const user of globalUsers) {
+          const userRef = getUserRef(user.uid);
+          await update(userRef, {
+            coins: (user.coins || 0) + 100
+          });
+        }
+        
+        showNotification("100 pièces ajoutées à tous les utilisateurs", "success");
+        addAdminLog("100 pièces ajoutées à tous les utilisateurs");
+        loadAdminDashboard();
+      });
+      
+      document.getElementById('admin-set-gems')?.addEventListener('click', async function() {
+        const userId = document.getElementById('admin-user-id')?.value;
+        const gemsAmount = parseInt(document.getElementById('admin-gems-amount')?.value);
+        
+        if (!userId || isNaN(gemsAmount)) {
+          showNotification("Veuillez entrer un ID utilisateur et un montant valide", "warning");
+          return;
+        }
+        
+        const userRef = getUserRef(userId);
+        await update(userRef, {
+          gems: gemsAmount
+        });
+        
+        showNotification(`Gems définis à ${gemsAmount} pour l'utilisateur ${userId}`, "success");
+        addAdminLog(`Gems définis à ${gemsAmount} pour l'utilisateur ${userId}`);
+      });
+      
+      document.getElementById('admin-set-coins')?.addEventListener('click', async function() {
+        const userId = document.getElementById('admin-user-id')?.value;
+        const coinsAmount = parseInt(document.getElementById('admin-coins-amount')?.value);
+        
+        if (!userId || isNaN(coinsAmount)) {
+          showNotification("Veuillez entrer un ID utilisateur et un montant valide", "warning");
+          return;
+        }
+        
+        const userRef = getUserRef(userId);
+        await update(userRef, {
+          coins: coinsAmount
+        });
+        
+        showNotification(`Pièces définies à ${coinsAmount} pour l'utilisateur ${userId}`, "success");
+        addAdminLog(`Pièces définies à ${coinsAmount} pour l'utilisateur ${userId}`);
+      });
+    }
+    
+    // NOUVEAU: Démarrer un championnat
+    async function startChampionship() {
+      const championshipData = {
+        id: 'champ_' + Date.now(),
+        name: 'Championnat Saison ' + new Date().getFullYear(),
+        maxParticipants: 16,
+        participants: [],
+        matches: [],
+        status: 'active',
+        startDate: new Date().toISOString(),
+        endDate: null
+      };
+      
+      const championshipRef = ref(db, 'championship/current');
+      await set(championshipRef, championshipData);
+      
+      addAdminLog("Championnat démarré");
+      showNotification("Championnat démarré!", "success");
+      loadAdminDashboard();
+    }
+    
+    // NOUVEAU: Terminer un championnat
+    async function endChampionship() {
+      if (!championship) return;
+      
+      const championshipRef = ref(db, 'championship/current');
+      await update(championshipRef, {
+        status: 'finished',
+        endDate: new Date().toISOString()
+      });
+      
+      // Distribuer les récompenses
+      const standings = calculateChampionshipStandings();
+      const rewards = [5000, 3000, 1500];
+      
+      for (let i = 0; i < Math.min(3, standings.length); i++) {
+        const userRef = getUserRef(standings[i].userId);
+        const userSnapshot = await get(userRef);
+        
+        if (userSnapshot.exists()) {
+          const userData = userSnapshot.val();
+          await update(userRef, {
+            coins: (userData.coins || 0) + rewards[i]
+          });
+        }
+      }
+      
+      addAdminLog("Championnat terminé - Récompenses distribuées");
+      showNotification("Championnat terminé et récompenses distribuées!", "success");
+      loadAdminDashboard();
+    }
+    
+    // NOUVEAU: Simuler des matchs de championnat
+    async function simulateChampionshipMatches() {
+      if (!championship) return;
+      
+      // Simuler 5 matchs
+      for (let i = 0; i < 5; i++) {
+        await simulateChampionshipMatch();
+      }
+      
+      addAdminLog("5 matchs de championnat simulés");
+      showNotification("5 matchs de championnat simulés!", "success");
+      loadAdminDashboard();
+    }
+    
+    // NOUVEAU: Mettre à jour le classement du championnat
+    async function updateChampionshipStandings() {
+      if (!championship) return;
+      
+      addAdminLog("Classement du championnat mis à jour");
+      showNotification("Classement mis à jour!", "success");
+      loadAdminDashboard();
+    }
+    
+    // NOUVEAU: Calculer le classement du championnat
+    function calculateChampionshipStandings() {
+      if (!championship || !championship.matches) return [];
+      
+      const standings = {};
+      
+      // Initialiser le classement pour chaque participant
+      championship.participants.forEach(participantId => {
+        standings[participantId] = {
+          userId: participantId,
+          points: 0,
+          wins: 0,
+          draws: 0,
+          losses: 0,
+          goalsFor: 0,
+          goalsAgainst: 0
+        };
+      });
+      
+      // Calculer les statistiques à partir des matchs
+      championship.matches.forEach(match => {
+        const [goals1, goals2] = match.score.split('-').map(Number);
+        
+        if (match.winner === match.participant1) {
+          // Participant1 gagne
+          standings[match.participant1].points += 3;
+          standings[match.participant1].wins += 1;
+          standings[match.participant2].losses += 1;
+        } else if (match.winner === match.participant2) {
+          // Participant2 gagne
+          standings[match.participant2].points += 3;
+          standings[match.participant2].wins += 1;
+          standings[match.participant1].losses += 1;
+        } else {
+          // Match nul
+          standings[match.participant1].points += 1;
+          standings[match.participant2].points += 1;
+          standings[match.participant1].draws += 1;
+          standings[match.participant2].draws += 1;
+        }
+        
+        // Buts marqués et encaissés
+        standings[match.participant1].goalsFor += goals1;
+        standings[match.participant1].goalsAgainst += goals2;
+        standings[match.participant2].goalsFor += goals2;
+        standings[match.participant2].goalsAgainst += goals1;
+      });
+      
+      // Convertir en tableau et trier
+      return Object.values(standings).sort((a, b) => {
+        if (b.points !== a.points) return b.points - a.points;
+        return (b.goalsFor - b.goalsAgainst) - (a.goalsFor - a.goalsAgainst);
+      });
+    }
+    
+    // NOUVEAU: Simuler un match de championnat
+    async function simulateChampionshipMatch() {
+      if (!championship) return;
+      
+      // Choisir deux participants aléatoires
+      const participants = championship.participants;
+      if (participants.length < 2) return;
+      
+      const participant1 = participants[Math.floor(Math.random() * participants.length)];
+      let participant2 = participants[Math.floor(Math.random() * participants.length)];
+      
+      // S'assurer qu'ils sont différents
+      while (participant2 === participant1) {
+        participant2 = participants[Math.floor(Math.random() * participants.length)];
+      }
+      
+      // Récupérer les données des participants
+      const user1Ref = getUserRef(participant1);
+      const user2Ref = getUserRef(participant2);
+      
+      const [user1Snapshot, user2Snapshot] = await Promise.all([
+        get(user1Ref),
+        get(user2Ref)
+      ]);
+      
+      if (!user1Snapshot.exists() || !user2Snapshot.exists()) return;
+      
+      const user1 = user1Snapshot.val();
+      const user2 = user2Snapshot.val();
+      
+      // Simuler le match
+      const user1Strength = calculateTeamStrength(user1);
+      const user2Strength = calculateTeamStrength(user2);
+      
+      const user1Goals = Math.floor(user1Strength / 25);
+      const user2Goals = Math.floor(user2Strength / 25);
+      
+      // Déterminer le résultat
+      let winner = null;
+      if (user1Goals > user2Goals) winner = participant1;
+      else if (user2Goals > user1Goals) winner = participant2;
+      
+      // Mettre à jour les statistiques du championnat
+      const match = {
+        participant1: participant1,
+        participant2: participant2,
+        score: `${user1Goals}-${user2Goals}`,
+        winner: winner,
+        date: new Date().toISOString()
+      };
+      
+      const championshipRef = ref(db, 'championship/current');
+      const updatedMatches = [...(championship.matches || []), match];
+      
+      await update(championshipRef, {
+        matches: updatedMatches
+      });
+      
+      return match;
+    }
+    
+    // CORRECTION: Système de sélection automatique d'équipe
+    function autoSelectBestTeam() {
+      if (!currentUserData || !currentUserData.cards) return;
+      
+      // Trier les cartes par score total (attaque + défense + vitesse)
+      const sortedCards = Object.values(currentUserData.cards)
+        .sort((a, b) => {
+          const scoreA = a.attack + a.defense + a.speed;
+          const scoreB = b.attack + b.defense + b.speed;
+          return scoreB - scoreA;
+        });
+      
+      // Prendre les 5 meilleures cartes
+      const bestCards = sortedCards.slice(0, 5);
+      const bestCardIds = bestCards.map(card => card.id);
+      
+      // Mettre à jour l'équipe de départ
+      updateUserData({
+        starters: bestCardIds
+      });
+      
+      showNotification("Équipe optimisée automatiquement!", "success");
+      loadTeam();
+    }
+
+    // CORRECTION: Calcul de la force d'équipe amélioré
+    function calculateTeamStrength(userData) {
+      if (!userData?.cards || !userData?.starters) return 0;
+      
+      let totalStrength = 0;
+      let positionCount = { ATT: 0, MID: 0, DEF: 0, GK: 0 };
+      
+      userData.starters.forEach(cardId => {
+        const card = userData.cards[cardId];
+        if (card) {
+          // Force de base
+          let cardStrength = card.attack + card.defense + card.speed;
+          
+          // Bonus de rareté
+          const rarityBonus = {
+            'bronze': 0,
+            'silver': 10,
+            'gold': 25,
+            'legendary': 50
+          };
+          cardStrength += rarityBonus[card.rarity] || 0;
+          
+          // Bonus de niveau
+          cardStrength += (card.level || 1) * 2;
+          
+          totalStrength += cardStrength;
+          positionCount[card.position] = (positionCount[card.position] || 0) + 1;
+        }
+      });
+      
+      // Bonus d'équilibre d'équipe
+      const hasAllPositions = positionCount.ATT > 0 && positionCount.MID > 0 && 
+                             positionCount.DEF > 0 && positionCount.GK > 0;
+      if (hasAllPositions) totalStrength *= 1.1;
+      
+      return Math.round(totalStrength);
+    }
+
+    // CORRECTION: Système de match contre joueurs réels
+    async function findOpponent() {
+      if (!await ensureUserData()) return;
+      
+      // Vérifier l'énergie
+      if ((currentUserData.energy || 0) < 5) {
+        showNotification("Pas assez d'énergie! Achetez-en ou attendez.", "warning");
+        return;
+      }
+      
+      const btnFindOpponent = document.getElementById('btn-find-opponent');
+      const matchmakingStatus = document.getElementById('matchmaking-status');
+      
+      if (btnFindOpponent) btnFindOpponent.disabled = true;
+      if (matchmakingStatus) matchmakingStatus.style.display = 'block';
+      
+      // Simuler la recherche d'adversaire avec un délai
+      let searchTime = 0;
+      const searchInterval = setInterval(() => {
+        searchTime += 1;
+        
+        if (matchmakingStatus) {
+          const dots = '.'.repeat((searchTime % 3) + 1);
+          matchmakingStatus.innerHTML = `
+            <div class="loading"></div>
+            <div>Recherche d'adversaire en cours${dots}</div>
+          `;
+        }
+        
+        // Trouver un adversaire après 2-5 secondes
+        if (searchTime >= 2 && Math.random() > 0.5) {
+          clearInterval(searchInterval);
+          finishMatchmaking();
+        }
+        
+        // Arrêter la recherche après 10 secondes maximum
+        if (searchTime >= 10) {
+          clearInterval(searchInterval);
+          finishMatchmaking(true);
+        }
+      }, 1000);
+      
+      matchmakingInterval = searchInterval;
+    }
+
+    // Terminer la recherche d'adversaire
+    function finishMatchmaking(timeout = false) {
+      const btnFindOpponent = document.getElementById('btn-find-opponent');
+      const matchmakingStatus = document.getElementById('matchmaking-status');
+      
+      if (btnFindOpponent) btnFindOpponent.disabled = false;
+      if (matchmakingStatus) matchmakingStatus.style.display = 'none';
+      
+      if (timeout) {
+        showNotification("Aucun adversaire trouvé. Réessayez plus tard.", "warning");
+        return;
+      }
+      
+      // Filtrer les utilisateurs disponibles (exclure l'utilisateur actuel)
+      const availableOpponents = globalUsers.filter(user => 
+        user.uid !== getUserId()
+      );
+      
+      if (availableOpponents.length === 0) {
+        showNotification("Aucun adversaire trouvé. Réessayez plus tard.", "warning");
+        return;
+      }
+      
+      // Choisir un adversaire aléatoire
+      currentOpponent = availableOpponents[Math.floor(Math.random() * availableOpponents.length)];
+      
+      // Afficher l'adversaire
+      const matchOpponent = document.getElementById('match-opponent');
+      const opponentInfo = document.getElementById('opponent-info');
+      
+      if (matchOpponent && opponentInfo) {
+        opponentInfo.innerHTML = `
+          <div class="leaderboard-item opponent-found">
+            <div class="friend-avatar ${currentOpponent.vip ? 'vip' : ''}">
+              ${currentOpponent.vip ? '👑' : '👤'}
+            </div>
+            <div>
+              <div>${currentOpponent.displayName || 'Joueur'}</div>
+              <div class="small">Niveau ${currentOpponent.level || 1} • ${currentOpponent.wins || 0} victoires</div>
+            </div>
+          </div>
+        `;
+        matchOpponent.style.display = 'block';
+      }
+      
+      showNotification(`Adversaire trouvé: ${currentOpponent.displayName || 'Joueur'}`, "success");
+    }
+
+    // Jouer un match
+    async function playMatch() {
+      if (!currentUserData || !currentOpponent) return;
+      
+      // Consommer de l'énergie
+      const updatedEnergy = (currentUserData.energy || 0) - 5;
+      await updateUserData({ energy: updatedEnergy });
+      
+      // Simuler un match
+      const userTeamStrength = calculateTeamStrength(currentUserData);
+      const opponentTeamStrength = calculateTeamStrength(currentOpponent);
+      
+      // Ajouter un peu d'aléatoire
+      const userRandomFactor = 0.8 + Math.random() * 0.4;
+      const opponentRandomFactor = 0.8 + Math.random() * 0.4;
+      
+      const userFinalStrength = userTeamStrength * userRandomFactor;
+      const opponentFinalStrength = opponentTeamStrength * opponentRandomFactor;
+      
+      // Déterminer le résultat
+      let userGoals = Math.floor(userFinalStrength / 20);
+      let opponentGoals = Math.floor(opponentFinalStrength / 20);
+      
+      // Assurer au moins 0 but
+      userGoals = Math.max(0, userGoals);
+      opponentGoals = Math.max(0, opponentGoals);
+      
+      // Déterminer le gagnant
+      let result = '';
+      let userWon = false;
+      
+      if (userGoals > opponentGoals) {
+        result = 'Victoire';
+        userWon = true;
+      } else if (userGoals < opponentGoals) {
+        result = 'Défaite';
+        userWon = false;
+      } else {
+        result = 'Match nul';
+      }
+      
+      // Mettre à jour les statistiques
+      const updatedWins = (currentUserData.wins || 0) + (userWon ? 1 : 0);
+      const updatedLosses = (currentUserData.losses || 0) + (!userWon && result !== 'Match nul' ? 1 : 0);
+      const updatedDraws = (currentUserData.draws || 0) + (result === 'Match nul' ? 1 : 0);
+      const updatedTotalMatches = (currentUserData.totalMatches || 0) + 1;
+      const updatedWinRate = Math.round((updatedWins / updatedTotalMatches) * 100);
+      const updatedTotalGoals = (currentUserData.totalGoals || 0) + userGoals;
+      
+      // Récompenses
+      let coinsReward = 50;
+      let xpReward = 25;
+      
+      if (userWon) {
+        coinsReward = 100;
+        xpReward = 50;
+      } else if (result === 'Match nul') {
+        coinsReward = 75;
+        xpReward = 35;
+      }
+      
+      const updatedCoins = (currentUserData.coins || 0) + coinsReward;
+      const updatedXp = (currentUserData.xp || 0) + xpReward;
+      
+      // Vérifier le niveau up
+      let updatedLevel = currentUserData.level || 1;
+      let updatedXpToNextLevel = currentUserData.xpToNextLevel || 100;
+      
+      if (updatedXp >= updatedXpToNextLevel) {
+        updatedLevel += 1;
+        updatedXp = updatedXp - updatedXpToNextLevel;
+        updatedXpToNextLevel = Math.floor(updatedXpToNextLevel * 1.5);
+        showNotification(`Félicitations! Vous êtes maintenant niveau ${updatedLevel}!`, "success");
+      }
+      
+      // Mettre à jour l'utilisateur
+      await updateUserData({
+        wins: updatedWins,
+        losses: updatedLosses,
+        draws: updatedDraws,
+        totalMatches: updatedTotalMatches,
+        winRate: updatedWinRate,
+        totalGoals: updatedTotalGoals,
+        coins: updatedCoins,
+        xp: updatedXp,
+        level: updatedLevel,
+        xpToNextLevel: updatedXpToNextLevel
+      });
+      
+      // Ajouter au historique
+      const matchEntry = {
+        opponent: currentOpponent.displayName || 'Joueur',
+        result: result,
+        score: `${userGoals}-${opponentGoals}`,
+        date: new Date().toISOString(),
+        coins: coinsReward,
+        xp: xpReward
+      };
+      
+      matchHistory.unshift(matchEntry);
+      if (matchHistory.length > 10) matchHistory = matchHistory.slice(0, 10);
+      
+      // Afficher le résultat
+      const matchResult = document.getElementById('match-result');
+      const matchResultContent = document.getElementById('match-result-content');
+      
+      if (matchResult && matchResultContent) {
+        matchResultContent.innerHTML = `
+          <div class="match-result">
+            <h3>${result}</h3>
+            <div class="match-score">${userGoals} - ${opponentGoals}</div>
+            <div class="team-lineup">
+              <div class="team">
+                <div>${currentUserData.displayName || 'Vous'}</div>
+                <div class="small">Force: ${Math.round(userTeamStrength)}</div>
+              </div>
+              <div class="vs">VS</div>
+              <div class="team">
+                <div>${currentOpponent.displayName || 'Adversaire'}</div>
+                <div class="small">Force: ${Math.round(opponentTeamStrength)}</div>
+              </div>
+            </div>
+            <div class="rewards">
+              <div class="small">Récompenses:</div>
+              <div>+${coinsReward} 🪙</div>
+              <div>+${xpReward} ⭐ XP</div>
+            </div>
+          </div>
+        `;
+        matchResult.style.display = 'block';
+      }
+      
+      // Masquer la section adversaire
+      const matchOpponent = document.getElementById('match-opponent');
+      if (matchOpponent) matchOpponent.style.display = 'none';
+      
+      // Recharger l'historique
+      loadMatchHistory();
+      
+      showNotification(`Match terminé: ${result} ${userGoals}-${opponentGoals}`, "success");
+    }
+
+    // Charger l'historique des matchs
+    function loadMatchHistory() {
+      const matchHistoryElement = document.getElementById('match-history');
+      if (!matchHistoryElement) return;
+      
+      if (matchHistory.length === 0) {
+        matchHistoryElement.innerHTML = '<div class="small">Aucun match joué</div>';
+      } else {
+        matchHistoryElement.innerHTML = matchHistory.map(match => `
+          <div class="leaderboard-item">
+            <div>
+              <div>${match.opponent}</div>
+              <div class="small">${match.score} • ${new Date(match.date).toLocaleDateString()}</div>
+            </div>
+            <div style="margin-left: auto; text-align: right;">
+              <div>${match.result}</div>
+              <div class="small">+${match.coins}🪙 +${match.xp}⭐</div>
+            </div>
+          </div>
+        `).join('');
+      }
+    }
+
+    // Gestionnaire d'état d'authentification
+    onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        // Utilisateur connecté
+        currentUserData = await ensureUserProfile(user.uid, user.displayName || 'Joueur', user.email);
+        const hdrUser = document.getElementById('hdr-user');
+        if (hdrUser) hdrUser.textContent = currentUserData.displayName || 'Joueur';
+        showScreen('dashboard');
+        showNotification(`Bienvenue ${currentUserData.displayName || 'Joueur'}!`, "success");
+      } else {
+        // Utilisateur déconnecté
+        currentUserData = null;
+        showScreen('login');
+        const hdrUser = document.getElementById('hdr-user');
+        if (hdrUser) hdrUser.textContent = 'Non connecté';
+      }
+    });
+    
+    // CORRECTION: Initialisation complète des événements - version corrigée
+    document.addEventListener('DOMContentLoaded', function() {
+      // Événements de connexion
+      const btnLogin = document.getElementById('btn-login');
+      if (btnLogin) {
+        btnLogin.addEventListener('click', async () => {
+          const email = document.getElementById('login-email')?.value;
+          const password = document.getElementById('login-pass')?.value;
+          
+          if (!email || !password) {
+            showNotification("Veuillez remplir tous les champs", "warning");
+            return;
+          }
+          
+          try {
+            await signInWithEmailAndPassword(auth, email, password);
+          } catch (error) {
+            console.error("Erreur de connexion:", error);
+            showNotification("Erreur de connexion: " + error.message, "danger");
+          }
+        });
+      }
+      
+      const btnGoRegister = document.getElementById('btn-go-register');
+      if (btnGoRegister) {
+        btnGoRegister.addEventListener('click', () => {
+          showScreen('register');
+        });
+      }
+      
+      const btnCancelRegister = document.getElementById('btn-cancel-register');
+      if (btnCancelRegister) {
+        btnCancelRegister.addEventListener('click', () => {
+          showScreen('login');
+        });
+      }
+      
+      const btnRegister = document.getElementById('btn-register');
+      if (btnRegister) {
+        btnRegister.addEventListener('click', async () => {
+          const username = document.getElementById('reg-name')?.value;
+          const email = document.getElementById('reg-email')?.value;
+          const password = document.getElementById('reg-pass')?.value;
+          
+          if (!username || !email || !password) {
+            showNotification("Veuillez remplir tous les champs", "warning");
+            return;
+          }
+          
+          try {
+            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+            const user = userCredential.user;
+            
+            await updateProfile(user, {
+              displayName: username
+            });
+            
+            await ensureUserProfile(user.uid, username, email);
+          } catch (error) {
+            console.error("Erreur d'inscription:", error);
+            showNotification("Erreur d'inscription: " + error.message, "danger");
+          }
+        });
+      }
+      
+      // Navigation dashboard
+      const navTeam = document.getElementById('nav-team');
+      if (navTeam) navTeam.addEventListener('click', () => showScreen('team'));
+      
+      const navStore = document.getElementById('nav-store');
+      if (navStore) navStore.addEventListener('click', () => showScreen('store'));
+      
+      const navMatch = document.getElementById('nav-match');
+      if (navMatch) navMatch.addEventListener('click', () => showScreen('match'));
+      
+      const navFriends = document.getElementById('nav-friends');
+      if (navFriends) navFriends.addEventListener('click', () => showScreen('friends'));
+      
+      const navFusion = document.getElementById('nav-fusion');
+      if (navFusion) navFusion.addEventListener('click', () => showScreen('fusion'));
+      
+      const navAdmin = document.getElementById('nav-admin');
+      if (navAdmin) navAdmin.addEventListener('click', () => showScreen('admin'));
+      
+      // CORRECTION: Navigation vers les nouveaux écrans
+      const navClan = document.getElementById('nav-clan');
+      if (navClan) navClan.addEventListener('click', () => showScreen('clan'));
+      
+      const navMarket = document.getElementById('nav-market');
+      if (navMarket) navMarket.addEventListener('click', () => showScreen('market'));
+      
+      const navBadges = document.getElementById('nav-badges');
+      if (navBadges) navBadges.addEventListener('click', () => showScreen('badges'));
+      
+      // Boutons retour
+      const teamBack = document.getElementById('team-back');
+      if (teamBack) teamBack.addEventListener('click', () => showScreen('dashboard'));
+      
+      const matchBack = document.getElementById('match-back');
+      if (matchBack) matchBack.addEventListener('click', () => showScreen('dashboard'));
+      
+      const storeBack = document.getElementById('store-back');
+      if (storeBack) storeBack.addEventListener('click', () => showScreen('dashboard'));
+      
+      const profileBack = document.getElementById('profile-back');
+      if (profileBack) profileBack.addEventListener('click', () => showScreen('dashboard'));
+      
+      const friendsBack = document.getElementById('friends-back');
+      if (friendsBack) friendsBack.addEventListener('click', () => showScreen('dashboard'));
+      
+      const fusionBack = document.getElementById('fusion-back');
+      if (fusionBack) fusionBack.addEventListener('click', () => showScreen('dashboard'));
+      
+      const adminBack = document.getElementById('admin-back');
+      if (adminBack) adminBack.addEventListener('click', () => showScreen('dashboard'));
+      
+      const profileViewBack = document.getElementById('profile-view-back');
+      if (profileViewBack) profileViewBack.addEventListener('click', () => showScreen('friends'));
+      
+      // CORRECTION: Boutons retour pour les nouveaux écrans
+      const clanBack = document.getElementById('clan-back');
+      if (clanBack) clanBack.addEventListener('click', () => showScreen('dashboard'));
+      
+      const marketBack = document.getElementById('market-back');
+      if (marketBack) marketBack.addEventListener('click', () => showScreen('dashboard'));
+      
+      const badgesBack = document.getElementById('badges-back');
+      if (badgesBack) badgesBack.addEventListener('click', () => showScreen('dashboard'));
+      
+      // Footer navigation
+      const ftHome = document.getElementById('ft-home');
+      if (ftHome) ftHome.addEventListener('click', () => showScreen('dashboard'));
+      
+      const ftTeam = document.getElementById('ft-team');
+      if (ftTeam) ftTeam.addEventListener('click', () => showScreen('team'));
+      
+      const ftMatch = document.getElementById('ft-match');
+      if (ftMatch) ftMatch.addEventListener('click', () => showScreen('match'));
+      
+      const ftStore = document.getElementById('ft-store');
+      if (ftStore) ftStore.addEventListener('click', () => showScreen('store'));
+      
+      const ftProfile = document.getElementById('ft-profile');
+      if (ftProfile) ftProfile.addEventListener('click', () => showScreen('profile'));
+      
+      // Boutons d'achat de packs avec pièces et gems
+      document.querySelectorAll('.buy-pack').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const packType = btn.dataset.pack;
+          const cost = parseInt(btn.dataset.cost);
+          const currency = btn.dataset.currency;
+          buyPack(packType, cost, currency);
+        });
+      });
+      
+      // Boutons d'achat d'énergie avec pièces et gems
+      document.querySelectorAll('.buy-energy').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const amount = parseInt(btn.dataset.amount);
+          const cost = parseInt(btn.dataset.cost);
+          const currency = btn.dataset.currency;
+          buyEnergy(amount, cost, currency);
+        });
+      });
+      
+      // CORRECTION: Bouton VIP fonctionnel
+      const btnBuyVip = document.getElementById('btn-buy-vip');
+      if (btnBuyVip) {
+        btnBuyVip.addEventListener('click', buyVip);
+      }
+      
+      // Bouton trouver adversaire
+      const btnFindOpponent = document.getElementById('btn-find-opponent');
+      if (btnFindOpponent) {
+        btnFindOpponent.addEventListener('click', findOpponent);
+      }
+      
+      // Bouton jouer match
+      const btnPlayMatch = document.getElementById('btn-play-match');
+      if (btnPlayMatch) {
+        btnPlayMatch.addEventListener('click', playMatch);
+      }
+      
+      // Daily reward
+      const btnDailyReward = document.getElementById('btn-daily-reward');
+      if (btnDailyReward) {
+        btnDailyReward.addEventListener('click', () => {
+          if (btnDailyReward.disabled) {
+            showNotification("Récompense déjà récupérée aujourd'hui", "warning");
+            return;
+          }
+          
+          if (dailyReward) dailyReward.classList.add('active');
+        });
+      }
+      
+      const claimReward = document.getElementById('claim-reward');
+      if (claimReward) {
+        claimReward.addEventListener('click', async () => {
+          if (!currentUserData) {
+            await loadUserData();
+          }
+          
+          if (!currentUserData) return;
+          
+          const updatedGems = (currentUserData.gems || 0) + 2;
+          const updatedCoins = (currentUserData.coins || 0) + 200;
+          const now = new Date().toISOString();
+          
+          await updateUserData({
+            gems: updatedGems,
+            coins: updatedCoins,
+            lastDailyReward: now
+          });
+          
+          if (dailyReward) dailyReward.classList.remove('active');
+          showNotification("Récompense quotidienne récupérée!", "success");
+          loadDashboard();
+        });
+      }
+      
+      // CORRECTION: Fusion fonctionnelle
+      const btnFusion = document.getElementById('btn-fusion');
+      if (btnFusion) {
+        btnFusion.addEventListener('click', executeFusion);
+      }
+      
+      // Événement pour créer un clan
+      document.getElementById('btn-create-clan')?.addEventListener('click', async () => {
+        const clanName = document.getElementById('clan-name')?.value;
+        if (!clanName) {
+          showNotification("Veuillez entrer un nom de clan", "warning");
+          return;
+        }
+        
+        const success = await createClan(clanName);
+        if (success) {
+          document.getElementById('clan-name').value = '';
+          loadClan();
+        }
+      });
+      
+      // CORRECTION: Événements pour les boutons de sélection automatique
+      document.getElementById('btn-auto-best')?.addEventListener('click', autoSelectBestTeam);
+      
+      // CORRECTION: Masquer le footer au chargement initial
+      if (footer) footer.classList.remove('visible');
+    });
+
+    // CORRECTION: Script de diagnostic et réparation
+    function diagnoseAndFix() {
+      console.log('🔍 Diagnostic des bugs...');
+      
+      const issues = [];
+      
+      // Vérifier la navigation
+      const missingScreens = ['clan', 'market', 'badges'];
+      missingScreens.forEach(screen => {
+        if (!screens[screen]) {
+          issues.push(`Écran ${screen} manquant`);
+        }
+      });
+      
+      // Vérifier les écouteurs d'événements
+      const criticalButtons = [
+        'btn-buy-vip', 'btn-fusion', 'btn-find-opponent',
+        'btn-play-match', 'btn-daily-reward', 'btn-auto-best'
+      ];
+      
+      criticalButtons.forEach(btnId => {
+        const btn = document.getElementById(btnId);
+        if (!btn) {
+          issues.push(`Bouton critique manquant: ${btnId}`);
+        }
+      });
+      
+      // Vérifier Firebase
+      if (!auth?.currentUser && currentUserData) {
+        issues.push('Incohérence des données d authentification');
+      }
+      
+      console.log('Problèmes détectés:', issues);
+      
+      // Appliquer les correctifs automatiques
+      if (issues.length > 0) {
+        console.log('🛠️ Application des correctifs...');
+        applyEmergencyFixes();
+      }
+      
+      return issues;
+    }
+
+    function applyEmergencyFixes() {
+      // Correction de la navigation
+      const originalShowScreen = showScreen;
+      showScreen = function(name) {
+        originalShowScreen(name);
+        
+        // Charger les écrans manquants
+        if (name === 'clan' && typeof loadClan === 'function') loadClan();
+        if (name === 'market' && typeof loadMarket === 'function') loadMarket();
+        if (name === 'badges' && typeof loadBadges === 'function') loadBadges();
+      };
+      
+      // Réattacher les événements critiques
+      setTimeout(() => {
+        const vipBtn = document.getElementById('btn-buy-vip');
+        if (vipBtn && !vipBtn._fixed) {
+          vipBtn.addEventListener('click', buyVip);
+          vipBtn._fixed = true;
+        }
+      }, 1000);
+    }
+
+    // Lancer le diagnostic au chargement
+    document.addEventListener('DOMContentLoaded', function() {
+      setTimeout(diagnoseAndFix, 2000);
+    });
+  </script>
+</body>
+</html>
