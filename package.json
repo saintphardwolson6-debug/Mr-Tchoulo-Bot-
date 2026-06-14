@@ -1,0 +1,13 @@
+{
+  "name": "Mr_Tchoulo",
+  "version": "1.0.0",
+  "main": "index.js",
+  "dependencies": {
+    "@whiskeysockets/baileys": "^6.5.0",
+    "discord.js": "^14.14.1",
+    "pino": "^8.19.0"
+  },
+  "scripts": {
+    "start": "node index.js"
+  }
+}
